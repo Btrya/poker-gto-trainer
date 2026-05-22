@@ -226,8 +226,9 @@ export function activePlayers(game: PokerGame): PokerPlayer[] {
 export function cardLabel(card: Card): string {
   const rank = card[0] as Rank;
   const suit = card[1] as Suit;
+  const displayRank = rank === "T" ? "10" : rank;
   const suitLabel: Record<Suit, string> = { s: "♠", h: "♥", d: "♦", c: "♣" };
-  return `${rank}${suitLabel[suit]}`;
+  return `${displayRank}${suitLabel[suit]}`;
 }
 
 export function cardTone(card: Card): "red" | "black" {

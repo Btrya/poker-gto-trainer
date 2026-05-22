@@ -917,12 +917,16 @@ h2 {
 }
 
 .playing-card {
-  background: #f8fafc;
-  color: #0f172a;
+  background: #ffffff;
+  color: #030712;
+}
+
+.playing-card.black {
+  color: #030712;
 }
 
 .playing-card.red {
-  color: #dc2626;
+  color: #d00000;
 }
 
 .playing-card.compact,
