@@ -3,10 +3,12 @@ export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "
 export type Card = `${Rank}${Suit}`;
 export type Street = "preflop" | "flop" | "turn" | "river" | "showdown";
 export type PlayerAction = "fold" | "call" | "check" | "bet";
+export type BotType = "beginner" | "calling-station" | "tight-weak" | "aggressive" | "balanced";
 
 export type PokerPlayer = {
   id: string;
   name: string;
+  botType?: BotType;
   isHero: boolean;
   stack: number;
   hole: Card[];
@@ -53,6 +55,77 @@ const rankValue: Record<Rank, number> = {
 
 const handNames = ["高牌", "一对", "两对", "三条", "顺子", "同花", "葫芦", "四条", "同花顺"];
 
+const botTypes: BotType[] = ["beginner", "calling-station", "tight-weak", "aggressive", "balanced"];
+
+const botProfiles: Record<
+  BotType,
+  {
+    label: string;
+    description: string;
+    looseness: number;
+    aggression: number;
+    bluff: number;
+    priceSensitivity: number;
+    drawChase: number;
+    valueThreshold: number;
+  }
+> = {
+  beginner: {
+    label: "新手",
+    description: "牌强就下注，牌弱就过牌，偶尔做不稳定跟注。",
+    looseness: 0.5,
+    aggression: 0.38,
+    bluff: 0.08,
+    priceSensitivity: 0.78,
+    drawChase: 0.45,
+    valueThreshold: 0.68,
+  },
+  "calling-station": {
+    label: "跟注站",
+    description: "跟注过宽，诈唬少，更容易用边缘牌看到下一张。",
+    looseness: 0.9,
+    aggression: 0.24,
+    bluff: 0.03,
+    priceSensitivity: 0.42,
+    drawChase: 0.78,
+    valueThreshold: 0.72,
+  },
+  "tight-weak": {
+    label: "紧弱",
+    description: "入池偏紧，面对压力弃牌过多，适合练习剥削性施压。",
+    looseness: 0.25,
+    aggression: 0.22,
+    bluff: 0.04,
+    priceSensitivity: 1.1,
+    drawChase: 0.34,
+    valueThreshold: 0.76,
+  },
+  aggressive: {
+    label: "激进",
+    description: "下注和加压频率高，会用听牌和弱牌施压。",
+    looseness: 0.62,
+    aggression: 0.82,
+    bluff: 0.22,
+    priceSensitivity: 0.62,
+    drawChase: 0.65,
+    valueThreshold: 0.58,
+  },
+  balanced: {
+    label: "均衡",
+    description: "接近基础训练模型，价值下注、半诈唬和防守频率更克制。",
+    looseness: 0.52,
+    aggression: 0.55,
+    bluff: 0.12,
+    priceSensitivity: 0.72,
+    drawChase: 0.58,
+    valueThreshold: 0.64,
+  },
+};
+
+export function getBotProfile(type?: BotType) {
+  return type ? botProfiles[type] : null;
+}
+
 export function createPokerGame(botCount: number, previous?: PokerGame): PokerGame {
   const playerCount = Math.min(6, Math.max(2, botCount + 1));
   const deck = shuffle(createDeck());
@@ -60,6 +133,7 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
   const players: PokerPlayer[] = Array.from({ length: playerCount }, (_, index) => ({
     id: index === 0 ? "hero" : `bot-${index}`,
     name: index === 0 ? "你" : `Bot ${index}`,
+    botType: index === 0 ? undefined : previous?.players[index]?.botType ?? botTypes[(index - 1) % botTypes.length],
     isHero: index === 0,
     stack: previous?.players[index]?.stack && previous.players[index].stack > 0 ? previous.players[index].stack : 1000,
     hole: [deck.pop()!, deck.pop()!],
@@ -166,8 +240,9 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     player.hasActed = true;
     game.history = [`${player.name} 跟注 ${amount}`, ...game.history];
   } else if (action === "bet") {
-    const betSize = Math.max(game.bigBlind, Math.round(game.pot * 0.55));
-    const amount = Math.min(betSize, player.stack);
+    const raiseSize = Math.max(game.bigBlind, Math.round(game.pot * 0.55));
+    const targetContribution = game.currentBet > 0 ? game.currentBet + raiseSize : raiseSize;
+    const amount = Math.min(Math.max(0, targetContribution - player.contribution), player.stack);
     player.stack -= amount;
     player.contribution += amount;
     game.pot += amount;
@@ -176,7 +251,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
       if (!seat.folded && seat.id !== player.id) seat.hasActed = false;
     });
     player.hasActed = true;
-    game.history = [`${player.name} 下注 ${amount}`, ...game.history];
+    game.history = [`${player.name} ${game.currentBet > raiseSize ? "加注" : "下注"} ${amount}`, ...game.history];
   } else {
     player.hasActed = true;
     game.history = [`${player.name} 过牌`, ...game.history];
@@ -252,18 +327,24 @@ function awardPot(game: PokerGame, winners: PokerPlayer[], message: string) {
 }
 
 function chooseBotAction(game: PokerGame, player: PokerPlayer, toCall: number): PlayerAction {
-  const strength = estimateStrength(game, player);
+  const profile = botProfiles[player.botType ?? "balanced"];
+  const madeStrength = estimateStrength(game, player);
+  const drawStrength = estimateDrawStrength(game, player);
+  const strength = Math.min(0.98, madeStrength + drawStrength * profile.drawChase);
   const pressure = toCall / Math.max(1, game.pot + toCall);
 
   if (toCall > 0) {
-    if (strength > 0.64 || pressure < 0.22) return "call";
-    if (strength > 0.46 && Math.random() > 0.35) return "call";
+    if (strength > 0.74 && profile.aggression > 0.7 && Math.random() < 0.18) return "bet";
+    const callScore = strength + profile.looseness * 0.16 - pressure * profile.priceSensitivity;
+    if (callScore > 0.46) return "call";
+    if (drawStrength > 0.16 && pressure < 0.28 + profile.looseness * 0.08 && Math.random() < profile.drawChase) return "call";
     return "fold";
   }
 
-  if (strength > 0.72) return "bet";
-  if (strength > 0.52 && Math.random() > 0.62) return "bet";
-  if (strength < 0.36 && Math.random() > 0.86) return "bet";
+  if (madeStrength > profile.valueThreshold) return "bet";
+  if (drawStrength > 0.18 && Math.random() < profile.aggression * 0.55) return "bet";
+  if (madeStrength > 0.48 && Math.random() < profile.aggression * 0.22) return "bet";
+  if (madeStrength < 0.38 && Math.random() < profile.bluff) return "bet";
   return "check";
 }
 
@@ -282,6 +363,25 @@ function estimateStrength(game: PokerGame, player: PokerPlayer): number {
 
   const evaluated = evaluateCards([...player.hole, ...game.board]);
   return Math.min(0.95, evaluated.category / 8 + evaluated.kickers[0] / 80);
+}
+
+function estimateDrawStrength(game: PokerGame, player: PokerPlayer): number {
+  if (game.street === "preflop" || game.board.length < 3) return 0;
+
+  const cards = [...player.hole, ...game.board];
+  const suitCounts = suits.map((suit) => cards.filter((card) => card[1] === suit).length);
+  const flushDraw = Math.max(...suitCounts) === 4 ? 0.2 : 0;
+  const values = [...new Set(cards.map((card) => rankValue[card[0] as Rank]))].sort((a, b) => a - b);
+  if (values.includes(14)) values.unshift(1);
+
+  let straightDraw = 0;
+  for (let start = 1; start <= 10; start += 1) {
+    const window = [start, start + 1, start + 2, start + 3, start + 4];
+    const hits = window.filter((value) => values.includes(value)).length;
+    if (hits === 4) straightDraw = Math.max(straightDraw, 0.16);
+  }
+
+  return Math.min(0.32, flushDraw + straightDraw);
 }
 
 function isBettingRoundComplete(game: PokerGame): boolean {

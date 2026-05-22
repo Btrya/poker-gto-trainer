@@ -19,6 +19,7 @@ pnpm dev
    - `supabase/migrations/002_seed_content.sql`
    - `supabase/migrations/003_expand_learning_content.sql`
    - `supabase/migrations/004_beginner_table_terms.sql`
+   - `supabase/migrations/005_english_beginner_terms.sql`
 3. 进入 `Authentication > Providers`，确认 `Email` provider 开启。
 4. 进入 `Authentication > URL Configuration`：
    - 本地开发时把 `Site URL` 设为 `http://localhost:5173`

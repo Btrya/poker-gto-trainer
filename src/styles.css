@@ -615,6 +615,13 @@ h2 {
   font-size: 0.82rem;
 }
 
+.player-seat em {
+  color: var(--green);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .dealer-chip {
   width: 18px;
   height: 18px;
@@ -1030,6 +1037,10 @@ input:focus-visible {
   .player-seat span {
     font-size: 0.68rem;
     line-height: 1.15;
+  }
+
+  .player-seat em {
+    font-size: 0.64rem;
   }
 
   .player-seat strong {

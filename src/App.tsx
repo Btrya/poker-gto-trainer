@@ -24,6 +24,7 @@ import {
   cardTone,
   createPokerGame,
   describeBestHand,
+  getBotProfile,
   heroToCall,
   type PlayerAction,
   type PokerGame,
@@ -532,6 +533,7 @@ function PlayerSeat({
         {dealer && <span className="dealer-chip">D</span>}
       </strong>
       <span>{player.folded ? "已弃牌" : `${player.stack} 筹码`}</span>
+      {player.botType && <em>{getBotProfile(player.botType)?.label}</em>}
     </div>
   );
 }
