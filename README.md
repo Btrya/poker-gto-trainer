@@ -17,6 +17,7 @@ pnpm dev
 2. 进入 `SQL Editor`，依次执行：
    - `supabase/migrations/001_initial_schema.sql`
    - `supabase/migrations/002_seed_content.sql`
+   - `supabase/migrations/003_expand_learning_content.sql`
 3. 进入 `Authentication > Providers`，确认 `Email` provider 开启。
 4. 进入 `Authentication > URL Configuration`：
    - 本地开发时把 `Site URL` 设为 `http://localhost:5173`
@@ -54,3 +55,13 @@ VITE_SUPABASE_ANON_KEY=你的 anon public key
 - 牌面纹理训练
 - 每日训练计划
 - 预计算 GTO 答案库
+
+## H5 支持
+
+当前界面已经按移动端 H5 做了适配：
+
+- 手机端底部固定 Tab 导航
+- iOS 安全区适配
+- 移动端触控按钮尺寸
+- 输入框 16px，避免 iOS 自动放大
+- PWA manifest 和图标，可从手机浏览器添加到主屏幕
