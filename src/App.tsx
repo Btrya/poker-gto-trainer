@@ -222,7 +222,7 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell section-${section}`}>
       <aside className="sidebar" aria-label="主导航">
         <div className="brand">
           <span className="brand-mark">
@@ -260,7 +260,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="content">
+      <main className={`content content-${section}`}>
         <header className="topbar">
           <div>
             <p className="eyebrow">Single Player Study Lab</p>
