@@ -901,7 +901,6 @@ h2 {
 }
 
 .hero-hand > span:last-child:not(.playing-card) {
-  color: var(--muted);
   margin-left: 4px;
 }
 
