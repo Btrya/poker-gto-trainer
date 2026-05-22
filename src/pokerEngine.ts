@@ -295,7 +295,8 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
 function settleIfNeeded(game: PokerGame) {
   const livePlayers = activePlayers(game);
   if (livePlayers.length === 1) {
-    awardPot(game, [livePlayers[0]], `${livePlayers[0].name} 赢下底池 ${game.pot}`);
+    const winnerHand = describeBestHand([...livePlayers[0].hole, ...game.board]);
+    awardPot(game, [livePlayers[0]], `${livePlayers[0].name} 以${winnerHand}赢下底池 ${game.pot}`, winnerHand);
     return;
   }
 
@@ -353,7 +354,7 @@ function awardPot(game: PokerGame, winners: PokerPlayer[], message: string, winn
     winner.stack += share;
   });
   game.lastWinners = winners.map((winner) => winner.id);
-  game.lastWinnerHand = winnerHand ?? "未摊牌";
+  game.lastWinnerHand = winnerHand ?? "";
   game.message = message;
   game.history = [message, ...game.history];
   game.pot = 0;
