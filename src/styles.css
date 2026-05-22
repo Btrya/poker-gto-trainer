@@ -1299,27 +1299,28 @@ input:focus-visible {
 
   .section-practice .action-panel {
     position: fixed;
-    z-index: 24;
+    z-index: 60;
     left: max(12px, env(safe-area-inset-left));
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(10px + env(safe-area-inset-bottom));
-    gap: 10px;
-    max-height: 178px;
-    overflow: hidden;
+    gap: 8px;
+    max-height: none;
+    overflow: visible;
     background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(18px);
     transform: translate(var(--panel-x, 0), var(--panel-y, 0));
   }
 
   .decision-drag-handle {
-    min-height: 26px;
-    display: flex;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(148, 163, 184, 0.36);
+    border-radius: 999px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 0.76rem;
-    font-weight: 800;
+    color: var(--text);
+    background: rgba(2, 6, 23, 0.78);
     user-select: none;
     touch-action: none;
     cursor: grab;
@@ -1329,14 +1330,11 @@ input:focus-visible {
     cursor: grabbing;
   }
 
-  .decision-drag-handle span {
-    width: 40px;
-    height: 4px;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.42);
-  }
-
   .section-practice .action-panel .panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
     font-size: 0.86rem;
   }
 
@@ -1366,8 +1364,10 @@ input:focus-visible {
 
   .section-practice .action-panel .primary-action,
   .section-practice .action-panel .secondary-action {
-    min-height: 44px;
-    padding: 0 8px;
+    min-height: 42px;
+    padding: 0 6px;
+    font-size: 0.9rem;
+    white-space: nowrap;
   }
 
   .pot-display {

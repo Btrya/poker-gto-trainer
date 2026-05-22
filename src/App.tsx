@@ -10,6 +10,7 @@ import {
   Layers3,
   LogIn,
   LogOut,
+  Move,
   Play,
   RotateCcw,
   Sparkles,
@@ -459,31 +460,50 @@ function PokerPractice({
   const isShowdown = game.street === "showdown";
   const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
   const [panelOffset, setPanelOffset] = useState({ x: 0, y: 0 });
-  const [dragStart, setDragStart] = useState<{ x: number; y: number; panelX: number; panelY: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    x: number;
+    y: number;
+    panelX: number;
+    panelY: number;
+    rect: DOMRect;
+  } | null>(null);
   const panelStyle = {
     "--panel-x": `${panelOffset.x}px`,
     "--panel-y": `${panelOffset.y}px`,
   } as React.CSSProperties;
 
-  function handlePanelPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+  function handlePanelPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    const panel = event.currentTarget.closest(".action-panel");
+    if (!panel) return;
+
     event.currentTarget.setPointerCapture(event.pointerId);
     setDragStart({
       x: event.clientX,
       y: event.clientY,
       panelX: panelOffset.x,
       panelY: panelOffset.y,
+      rect: panel.getBoundingClientRect(),
     });
   }
 
-  function handlePanelPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+  function handlePanelPointerMove(event: React.PointerEvent<HTMLButtonElement>) {
     if (!dragStart) return;
 
-    const nextX = clamp(dragStart.panelX + event.clientX - dragStart.x, -110, 110);
-    const nextY = clamp(dragStart.panelY + event.clientY - dragStart.y, -260, 40);
+    const deltaX = event.clientX - dragStart.x;
+    const deltaY = event.clientY - dragStart.y;
+    const minLeft = 8;
+    const maxLeft = Math.max(minLeft, window.innerWidth - dragStart.rect.width - 8);
+    const minTop = 82;
+    const maxTop = Math.max(minTop, window.innerHeight - dragStart.rect.height - 8);
+    const desiredLeft = clamp(dragStart.rect.left + deltaX, minLeft, maxLeft);
+    const desiredTop = clamp(dragStart.rect.top + deltaY, minTop, maxTop);
+    const nextX = dragStart.panelX + desiredLeft - dragStart.rect.left;
+    const nextY = dragStart.panelY + desiredTop - dragStart.rect.top;
+
     setPanelOffset({ x: nextX, y: nextY });
   }
 
-  function stopPanelDrag(event: React.PointerEvent<HTMLDivElement>) {
+  function stopPanelDrag(event: React.PointerEvent<HTMLButtonElement>) {
     event.currentTarget.releasePointerCapture(event.pointerId);
     setDragStart(null);
   }
@@ -538,23 +558,22 @@ function PokerPractice({
       </article>
 
       <aside className="action-panel" style={panelStyle}>
-        <div
-          className="decision-drag-handle"
-          onDoubleClick={() => setPanelOffset({ x: 0, y: 0 })}
-          onPointerCancel={stopPanelDrag}
-          onPointerDown={handlePanelPointerDown}
-          onPointerMove={handlePanelPointerMove}
-          onPointerUp={stopPanelDrag}
-          role="button"
-          tabIndex={0}
-          title="拖动调整决策栏位置，双击复位"
-        >
-          <span />
-          拖动决策栏
-        </div>
         <div className="panel-title">
           <Sparkles size={18} aria-hidden="true" />
           当前决策
+          <button
+            aria-label="拖动调整决策栏位置，双击复位"
+            className="decision-drag-handle"
+            onDoubleClick={() => setPanelOffset({ x: 0, y: 0 })}
+            onPointerCancel={stopPanelDrag}
+            onPointerDown={handlePanelPointerDown}
+            onPointerMove={handlePanelPointerMove}
+            onPointerUp={stopPanelDrag}
+            title="拖动调整决策栏位置，双击复位"
+            type="button"
+          >
+            <Move size={16} aria-hidden="true" />
+          </button>
         </div>
         <p>{game.message}</p>
         <div className="hero-hand">
