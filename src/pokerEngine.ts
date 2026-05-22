@@ -4,6 +4,14 @@ export type Card = `${Rank}${Suit}`;
 export type Street = "preflop" | "flop" | "turn" | "river" | "showdown";
 export type PlayerAction = "fold" | "call" | "check" | "bet";
 export type BotType = "beginner" | "calling-station" | "tight-weak" | "aggressive" | "balanced";
+export type PokerActionEvent = {
+  id: string;
+  playerId: string;
+  playerIndex: number;
+  action: PlayerAction;
+  amount: number;
+  label: string;
+};
 
 export type PokerPlayer = {
   id: string;
@@ -172,20 +180,36 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
     lastWinners: [],
   };
 
-  return runBotsUntilHero(game);
+  return game;
 }
 
-export function act(game: PokerGame, action: PlayerAction): PokerGame {
-  if (game.street === "showdown") return game;
+export function act(game: PokerGame, action: PlayerAction): { game: PokerGame; event: PokerActionEvent | null } {
+  if (game.street === "showdown") return { game, event: null };
 
   const nextGame = cloneGame(game);
   const player = nextGame.players[nextGame.actionIndex];
   const toCall = Math.max(0, nextGame.currentBet - player.contribution);
 
-  if (!player.isHero || player.folded) return nextGame;
+  if (!player.isHero || player.folded) return { game: nextGame, event: null };
 
-  applyAction(nextGame, player, action, toCall);
-  return runBotsUntilHero(nextGame);
+  const event = applyAction(nextGame, player, action, toCall);
+  return { game: nextGame, event };
+}
+
+export function shouldBotAct(game: PokerGame): boolean {
+  const player = game.players[game.actionIndex];
+  return Boolean(player && !player.isHero && !player.folded && game.street !== "showdown");
+}
+
+export function actNextBot(game: PokerGame): { game: PokerGame; event: PokerActionEvent | null } {
+  if (!shouldBotAct(game)) return { game, event: null };
+
+  const nextGame = cloneGame(game);
+  const player = nextGame.players[nextGame.actionIndex];
+  const toCall = Math.max(0, nextGame.currentBet - player.contribution);
+  const action = chooseBotAction(nextGame, player, toCall);
+  const event = applyAction(nextGame, player, action, toCall);
+  return { game: nextGame, event };
 }
 
 export function heroToCall(game: PokerGame): number {
@@ -212,43 +236,29 @@ export function describeBestHand(cards: Card[]): string {
   return handNames[evaluateCards(cards).category];
 }
 
-function runBotsUntilHero(game: PokerGame): PokerGame {
-  let nextGame = cloneGame(game);
-  let guard = 0;
+function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction, toCall: number): PokerActionEvent {
+  const playerIndex = game.players.findIndex((seat) => seat.id === player.id);
+  let amount = 0;
+  let label = "";
 
-  while (nextGame.street !== "showdown" && !nextGame.players[nextGame.actionIndex]?.isHero && guard < 80) {
-    const player = nextGame.players[nextGame.actionIndex];
-    if (!player || player.folded) {
-      nextGame.actionIndex = nextActiveIndex(nextGame, nextGame.actionIndex);
-      guard += 1;
-      continue;
-    }
-
-    const toCall = Math.max(0, nextGame.currentBet - player.contribution);
-    const action = chooseBotAction(nextGame, player, toCall);
-    applyAction(nextGame, player, action, toCall);
-    guard += 1;
-  }
-
-  return nextGame;
-}
-
-function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction, toCall: number) {
   if (action === "fold") {
     player.folded = true;
     player.hasActed = true;
-    game.history = [`${player.name} 弃牌`, ...game.history];
+    label = `${player.name} 弃牌`;
+    game.history = [label, ...game.history];
   } else if (action === "call") {
-    const amount = Math.min(toCall, player.stack);
+    amount = Math.min(toCall, player.stack);
     player.stack -= amount;
     player.contribution += amount;
     game.pot += amount;
     player.hasActed = true;
-    game.history = [`${player.name} 跟注 ${amount}`, ...game.history];
+    label = `${player.name} 跟注 ${amount}`;
+    game.history = [label, ...game.history];
   } else if (action === "bet") {
     const raiseSize = Math.max(game.bigBlind, Math.round(game.pot * 0.55));
     const targetContribution = game.currentBet > 0 ? game.currentBet + raiseSize : raiseSize;
-    const amount = Math.min(Math.max(0, targetContribution - player.contribution), player.stack);
+    amount = Math.min(Math.max(0, targetContribution - player.contribution), player.stack);
+    const verb = game.currentBet > 0 ? "加注" : "下注";
     player.stack -= amount;
     player.contribution += amount;
     game.pot += amount;
@@ -257,13 +267,23 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
       if (!seat.folded && seat.id !== player.id) seat.hasActed = false;
     });
     player.hasActed = true;
-    game.history = [`${player.name} ${game.currentBet > raiseSize ? "加注" : "下注"} ${amount}`, ...game.history];
+    label = `${player.name} ${verb} ${amount}`;
+    game.history = [label, ...game.history];
   } else {
     player.hasActed = true;
-    game.history = [`${player.name} 过牌`, ...game.history];
+    label = `${player.name} 过牌`;
+    game.history = [label, ...game.history];
   }
 
   settleIfNeeded(game);
+  return {
+    id: `${Date.now()}-${player.id}-${action}-${Math.random()}`,
+    playerId: player.id,
+    playerIndex,
+    action,
+    amount,
+    label,
+  };
 }
 
 function settleIfNeeded(game: PokerGame) {

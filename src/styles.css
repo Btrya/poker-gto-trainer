@@ -316,6 +316,13 @@ h2 {
   border-color: var(--muted);
 }
 
+.primary-action:disabled,
+.secondary-action:disabled {
+  cursor: wait;
+  opacity: 0.52;
+  box-shadow: none;
+}
+
 .table-visual {
   min-height: 260px;
   display: grid;
@@ -542,6 +549,26 @@ h2 {
   font: inherit;
 }
 
+.animation-toggle {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+  background: #020617;
+  cursor: pointer;
+}
+
+.animation-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
 .poker-felt {
   position: relative;
   min-height: 560px;
@@ -573,6 +600,98 @@ h2 {
   background: rgba(2, 6, 23, 0.62);
   padding: 8px 14px;
   font-weight: 800;
+}
+
+.action-burst {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  pointer-events: none;
+  animation: actionLabel 620ms ease both;
+}
+
+.action-burst > span {
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.82);
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.chip-stack {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  animation: chipsToPot 620ms ease-in-out both;
+}
+
+.chip-stack i {
+  position: absolute;
+  width: 26px;
+  height: 9px;
+  left: 5px;
+  border-radius: 999px;
+  border: 2px solid #f8fafc;
+  background: #22c55e;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.26);
+}
+
+.chip-stack i:nth-child(1) {
+  top: 4px;
+}
+
+.chip-stack i:nth-child(2) {
+  top: 13px;
+  background: #f59e0b;
+}
+
+.chip-stack i:nth-child(3) {
+  top: 22px;
+  background: #38bdf8;
+}
+
+.fold-cards {
+  position: relative;
+  width: 44px;
+  height: 34px;
+  animation: cardsToMuck 620ms ease-in-out both;
+}
+
+.fold-cards i {
+  position: absolute;
+  width: 26px;
+  height: 36px;
+  border-radius: 7px;
+  background: repeating-linear-gradient(135deg, #1e293b 0 6px, #334155 6px 12px);
+  border: 1px solid rgba(248, 250, 252, 0.24);
+}
+
+.fold-cards i:first-child {
+  left: 5px;
+  transform: rotate(-12deg);
+}
+
+.fold-cards i:last-child {
+  right: 5px;
+  transform: rotate(12deg);
+}
+
+.check-pulse {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #052e16;
+  background: var(--green);
+  font-weight: 900;
+  animation: checkPulse 620ms ease both;
 }
 
 .player-seat {
@@ -809,6 +928,64 @@ button:focus-visible,
 input:focus-visible {
   outline: 3px solid rgba(56, 189, 248, 0.75);
   outline-offset: 3px;
+}
+
+@keyframes chipsToPot {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.72);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(50% - 18px), calc(50% - 18px)) scale(0.62);
+  }
+}
+
+@keyframes cardsToMuck {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.82);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -62px) rotate(-10deg) scale(0.68);
+  }
+}
+
+@keyframes checkPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.64);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.34);
+  }
+}
+
+@keyframes actionLabel {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(8px);
+  }
+  24%,
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-12px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

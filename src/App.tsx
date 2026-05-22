@@ -19,13 +19,15 @@ import { lessons as fallbackLessons, questions as fallbackQuestions, terms as fa
 import { isSupabaseConfigured, supabase } from "./supabase";
 import {
   act,
-  activePlayers,
+  actNextBot,
   cardLabel,
   cardTone,
   createPokerGame,
   describeBestHand,
   getBotProfile,
   heroToCall,
+  shouldBotAct,
+  type PokerActionEvent,
   type PlayerAction,
   type PokerGame,
   type PokerPlayer,
@@ -51,7 +53,9 @@ function App() {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [botCount, setBotCount] = useState(3);
-  const [pokerGame, setPokerGame] = useState<PokerGame>(() => createPokerGame(3));
+  const [animationEnabled, setAnimationEnabled] = useState(false);
+  const [pokerGame, setPokerGame] = useState<PokerGame>(() => resolveBotsSync(createPokerGame(3)));
+  const [actionEvent, setActionEvent] = useState<PokerActionEvent | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
@@ -117,6 +121,34 @@ function App() {
     localStorage.setItem("poker-gto-attempts", JSON.stringify(attempts));
   }, [attempts]);
 
+  useEffect(() => {
+    if (!animationEnabled || actionEvent || !shouldBotAct(pokerGame)) return;
+
+    const timer = window.setTimeout(() => {
+      const result = actNextBot(pokerGame);
+      setPokerGame(result.game);
+      setActionEvent(result.event);
+    }, 520);
+
+    return () => window.clearTimeout(timer);
+  }, [actionEvent, animationEnabled, pokerGame]);
+
+  useEffect(() => {
+    if (!animationEnabled && shouldBotAct(pokerGame)) {
+      setPokerGame((current) => resolveBotsSync(current));
+    }
+  }, [animationEnabled, pokerGame]);
+
+  useEffect(() => {
+    if (!actionEvent) return;
+
+    const timer = window.setTimeout(() => {
+      setActionEvent(null);
+    }, 620);
+
+    return () => window.clearTimeout(timer);
+  }, [actionEvent]);
+
   async function handleMagicLink(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !authEmail) return;
@@ -174,11 +206,19 @@ function App() {
 
   function startNewPokerHand(nextBotCount = botCount) {
     setBotCount(nextBotCount);
-    setPokerGame((current) => createPokerGame(nextBotCount, current));
+    setActionEvent(null);
+    setPokerGame((current) => {
+      const nextGame = createPokerGame(nextBotCount, current);
+      return animationEnabled ? nextGame : resolveBotsSync(nextGame);
+    });
   }
 
   function handlePokerAction(action: PlayerAction) {
-    setPokerGame((current) => act(current, action));
+    setPokerGame((current) => {
+      const result = act(current, action);
+      setActionEvent(animationEnabled ? result.event : null);
+      return animationEnabled ? result.game : resolveBotsSync(result.game);
+    });
   }
 
   return (
@@ -254,7 +294,10 @@ function App() {
             botCount={botCount}
             game={pokerGame}
             onAction={handlePokerAction}
+            actionEvent={animationEnabled ? actionEvent : null}
+            animationEnabled={animationEnabled}
             onBotCountChange={startNewPokerHand}
+            onToggleAnimation={setAnimationEnabled}
             onNewHand={() => startNewPokerHand()}
           />
         )}
@@ -392,22 +435,29 @@ function Overview({
 }
 
 function PokerPractice({
+  actionEvent,
+  animationEnabled,
   botCount,
   game,
   onAction,
   onBotCountChange,
+  onToggleAnimation,
   onNewHand,
 }: {
+  actionEvent: PokerActionEvent | null;
+  animationEnabled: boolean;
   botCount: number;
   game: PokerGame;
   onAction: (action: PlayerAction) => void;
   onBotCountChange: (count: number) => void;
+  onToggleAnimation: (enabled: boolean) => void;
   onNewHand: () => void;
 }) {
   const hero = game.players.find((player) => player.isHero)!;
   const toCall = heroToCall(game);
   const canCheck = toCall === 0;
   const isShowdown = game.street === "showdown";
+  const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
 
   return (
     <section className="play-layout">
@@ -427,6 +477,10 @@ function PokerPractice({
               ))}
             </select>
           </label>
+          <label className="animation-toggle">
+            <input checked={animationEnabled} onChange={(event) => onToggleAnimation(event.target.checked)} type="checkbox" />
+            动画
+          </label>
         </div>
 
         <div className="poker-felt" aria-label="德扑牌桌">
@@ -437,6 +491,7 @@ function PokerPractice({
             })}
           </div>
           <div className="pot-display">底池 {game.pot}</div>
+          {actionEvent && <ActionBurst event={actionEvent} total={game.players.length} />}
           {game.players.map((player, index) => (
             <PlayerSeat
               active={game.actionIndex === index && !isShowdown}
@@ -468,13 +523,13 @@ function PokerPractice({
 
         {!isShowdown ? (
           <div className="action-grid">
-            <button className="secondary-action" onClick={() => onAction("fold")} type="button">
+            <button className="secondary-action" disabled={waitingForBot} onClick={() => onAction("fold")} type="button">
               弃牌
             </button>
-            <button className="secondary-action" onClick={() => onAction(canCheck ? "check" : "call")} type="button">
+            <button className="secondary-action" disabled={waitingForBot} onClick={() => onAction(canCheck ? "check" : "call")} type="button">
               {canCheck ? "过牌" : `跟注 ${toCall}`}
             </button>
-            <button className="primary-action" onClick={() => onAction("bet")} type="button">
+            <button className="primary-action" disabled={waitingForBot} onClick={() => onAction("bet")} type="button">
               {canCheck ? "下注" : "加压"}
             </button>
           </div>
@@ -496,6 +551,35 @@ function PokerPractice({
         </div>
       </aside>
     </section>
+  );
+}
+
+function ActionBurst({ event, total }: { event: PokerActionEvent; total: number }) {
+  const angle = -90 + event.playerIndex * (360 / total);
+  const radius = 37;
+  const x = 50 + radius * Math.cos((angle * Math.PI) / 180);
+  const y = 50 + radius * Math.sin((angle * Math.PI) / 180);
+  const isFold = event.action === "fold";
+  const isCheck = event.action === "check";
+
+  return (
+    <div className={`action-burst ${event.action}`} style={{ left: `${x}%`, top: `${y}%` }}>
+      <span>{event.label}</span>
+      {isFold ? (
+        <div className="fold-cards">
+          <i />
+          <i />
+        </div>
+      ) : isCheck ? (
+        <div className="check-pulse">过</div>
+      ) : (
+        <div className="chip-stack">
+          <i />
+          <i />
+          <i />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -702,6 +786,18 @@ function readLocalAttempts(): Attempt[] {
   } catch {
     return [];
   }
+}
+
+function resolveBotsSync(game: PokerGame): PokerGame {
+  let current = game;
+  let guard = 0;
+
+  while (shouldBotAct(current) && guard < 80) {
+    current = actNextBot(current).game;
+    guard += 1;
+  }
+
+  return current;
 }
 
 export default App;
