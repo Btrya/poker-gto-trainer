@@ -515,7 +515,7 @@ function PlayerSeat({
   winner: boolean;
 }) {
   const angle = -90 + index * (360 / total);
-  const radius = 42;
+  const radius = 37;
   const x = 50 + radius * Math.cos((angle * Math.PI) / 180);
   const y = 50 + radius * Math.sin((angle * Math.PI) / 180);
 

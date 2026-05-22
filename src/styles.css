@@ -994,6 +994,10 @@ input:focus-visible {
     border-radius: 16px;
   }
 
+  .poker-table-panel {
+    overflow: hidden;
+  }
+
   .play-toolbar {
     display: grid;
     gap: 12px;
@@ -1008,41 +1012,74 @@ input:focus-visible {
   }
 
   .poker-felt {
-    min-height: 430px;
-    border-width: 10px;
-    border-radius: 32px;
+    min-height: clamp(360px, 92vw, 430px);
+    margin: 18px auto 8px;
+    border-width: 8px;
+    border-radius: 28px;
+    overflow: visible;
   }
 
   .player-seat {
-    width: 102px;
-    min-height: 86px;
-    padding: 8px;
-    border-radius: 14px;
+    width: 82px;
+    min-height: 72px;
+    padding: 7px 6px;
+    border-radius: 12px;
+    gap: 3px;
   }
 
   .player-seat span {
-    font-size: 0.74rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+  }
+
+  .player-seat strong {
+    font-size: 0.78rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .playing-card,
   .empty-card {
-    width: 36px;
-    height: 52px;
-    border-radius: 9px;
+    width: 32px;
+    height: 46px;
+    border-radius: 8px;
+    font-size: 0.86rem;
   }
 
   .playing-card.compact,
   .card-back {
-    width: 26px;
-    height: 36px;
+    width: 22px;
+    height: 31px;
+    border-radius: 7px;
+    font-size: 0.66rem;
   }
 
   .community-board {
-    gap: 5px;
+    top: 42%;
+    gap: 4px;
+    max-width: calc(100vw - 72px);
   }
 
   .action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pot-display {
+    top: 55%;
+    padding: 7px 12px;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+
+  .hero-hand {
+    justify-content: center;
+  }
+
+  .tip-box,
+  .hand-history {
+    font-size: 0.86rem;
   }
 
   .lesson-row {
@@ -1088,5 +1125,50 @@ input:focus-visible {
   .login-form button,
   .icon-button {
     width: 48px;
+  }
+}
+
+@media (max-width: 390px) {
+  .nav-list {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .nav-button {
+    min-height: 50px;
+    font-size: 0.68rem;
+  }
+
+  .poker-table-panel,
+  .action-panel {
+    padding: 12px;
+  }
+
+  .poker-felt {
+    min-height: 340px;
+    border-radius: 24px;
+  }
+
+  .player-seat {
+    width: 74px;
+    min-height: 66px;
+  }
+
+  .playing-card,
+  .empty-card {
+    width: 29px;
+    height: 42px;
+  }
+
+  .playing-card.compact,
+  .card-back {
+    width: 20px;
+    height: 28px;
+  }
+
+  .community-board {
+    gap: 3px;
   }
 }
