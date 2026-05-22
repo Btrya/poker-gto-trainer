@@ -24,6 +24,8 @@ export type PokerGame = {
   pot: number;
   currentBet: number;
   dealerIndex: number;
+  smallBlindIndex: number;
+  bigBlindIndex: number;
   actionIndex: number;
   street: Street;
   handNumber: number;
@@ -156,13 +158,17 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
     pot: smallBlind + bigBlind,
     currentBet: bigBlind,
     dealerIndex,
+    smallBlindIndex: sbIndex,
+    bigBlindIndex: bbIndex,
     actionIndex: nextIndex(bbIndex, players.length),
     street: "preflop",
     handNumber: (previous?.handNumber ?? 0) + 1,
     smallBlind,
     bigBlind,
     message: "新一手开始。翻前行动从大盲左侧开始。",
-    history: [`第 ${(previous?.handNumber ?? 0) + 1} 手开始，盲注 ${smallBlind}/${bigBlind}`],
+    history: [
+      `第 ${(previous?.handNumber ?? 0) + 1} 手开始，${players[sbIndex].name} 是 SB，${players[bbIndex].name} 是 BB，盲注 ${smallBlind}/${bigBlind}`,
+    ],
     lastWinners: [],
   };
 

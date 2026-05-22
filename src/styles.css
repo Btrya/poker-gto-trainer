@@ -622,16 +622,35 @@ h2 {
   font-weight: 800;
 }
 
-.dealer-chip {
+.position-chips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dealer-chip,
+.blind-chip {
   width: 18px;
   height: 18px;
   border-radius: 999px;
   display: inline-grid;
   place-items: center;
-  background: #f8fafc;
-  color: #0f172a !important;
   font-size: 0.7rem !important;
   font-weight: 900;
+}
+
+.dealer-chip {
+  background: #f8fafc;
+  color: #0f172a !important;
+}
+
+.blind-chip {
+  width: auto;
+  min-width: 24px;
+  padding: 0 5px;
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.42);
+  color: var(--green) !important;
 }
 
 .mini-cards,

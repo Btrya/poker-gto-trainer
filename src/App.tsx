@@ -440,6 +440,7 @@ function PokerPractice({
           {game.players.map((player, index) => (
             <PlayerSeat
               active={game.actionIndex === index && !isShowdown}
+              blind={game.smallBlindIndex === index ? "SB" : game.bigBlindIndex === index ? "BB" : undefined}
               dealer={game.dealerIndex === index}
               key={player.id}
               player={player}
@@ -500,6 +501,7 @@ function PokerPractice({
 
 function PlayerSeat({
   active,
+  blind,
   dealer,
   index,
   player,
@@ -508,6 +510,7 @@ function PlayerSeat({
   winner,
 }: {
   active: boolean;
+  blind?: "SB" | "BB";
   dealer: boolean;
   index: number;
   player: PokerPlayer;
@@ -530,7 +533,10 @@ function PlayerSeat({
       </div>
       <strong>
         {player.name}
-        {dealer && <span className="dealer-chip">D</span>}
+        <span className="position-chips">
+          {dealer && <span className="dealer-chip">D</span>}
+          {blind && <span className="blind-chip">{blind}</span>}
+        </span>
       </strong>
       <span>{player.folded ? "已弃牌" : `${player.stack} 筹码`}</span>
       {player.botType && <em>{getBotProfile(player.botType)?.label}</em>}
