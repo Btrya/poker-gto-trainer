@@ -260,6 +260,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     player.stack -= amount;
     player.contribution += amount;
     game.pot += amount;
+    markAllInIfNeeded(player);
     player.hasActed = true;
     label = `${player.name} 跟注 ${amount}`;
     game.history = [label, ...game.history];
@@ -271,6 +272,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     player.stack -= amount;
     player.contribution += amount;
     game.pot += amount;
+    markAllInIfNeeded(player);
     game.currentBet = player.contribution;
     game.players.forEach((seat) => {
       if (!seat.folded && seat.id !== player.id) seat.hasActed = false;
@@ -319,6 +321,11 @@ function settleIfNeeded(game: PokerGame) {
   }
 
   if (livePlayers.every((player) => player.allIn)) {
+    runoutToShowdown(game);
+    return;
+  }
+
+  if (livePlayers.filter((player) => !player.allIn).length <= 1 && livePlayers.some((player) => player.allIn)) {
     runoutToShowdown(game);
     return;
   }
@@ -464,7 +471,7 @@ function nextActiveIndex(game: PokerGame, fromIndex: number): number {
   let index = fromIndex;
   for (let i = 0; i < game.players.length; i += 1) {
     index = nextIndex(index, game.players.length);
-    if (!game.players[index].folded) return index;
+    if (!game.players[index].folded && !game.players[index].allIn) return index;
   }
   return index;
 }
@@ -476,6 +483,14 @@ function nextIndex(index: number, length: number): number {
 function postBlind(player: PokerPlayer, blind: number) {
   player.stack -= blind;
   player.contribution += blind;
+  markAllInIfNeeded(player);
+}
+
+function markAllInIfNeeded(player: PokerPlayer) {
+  if (player.stack <= 0) {
+    player.stack = 0;
+    player.allIn = true;
+  }
 }
 
 function createDeck(): Card[] {
