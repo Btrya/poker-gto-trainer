@@ -459,6 +459,11 @@ function PokerPractice({
   const canCheck = toCall === 0;
   const isShowdown = game.street === "showdown";
   const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
+  const heroWon = isShowdown && game.lastWinners.includes(hero.id);
+  const winnerNames = game.lastWinners
+    .map((winnerId) => game.players.find((player) => player.id === winnerId)?.name)
+    .filter(Boolean)
+    .join("、");
   const [panelOffset, setPanelOffset] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState<{
     x: number;
@@ -533,6 +538,18 @@ function PokerPractice({
         </div>
 
         <div className="poker-felt" aria-label="德扑牌桌">
+          {heroWon && <Fireworks />}
+          {isShowdown && (
+            <div className={`result-banner ${heroWon ? "hero-win" : ""}`}>
+              <strong>{heroWon ? "你赢了" : `${winnerNames} 获胜`}</strong>
+              <span>{game.lastWinnerHand}</span>
+            </div>
+          )}
+          <div className="table-log">
+            {game.history.slice(0, 3).map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </div>
           <div className="community-board">
             {Array.from({ length: 5 }).map((_, index) => {
               const card = game.board[index];
@@ -641,6 +658,16 @@ function ActionBurst({ event, total }: { event: PokerActionEvent; total: number 
           <i />
         </div>
       )}
+    </div>
+  );
+}
+
+function Fireworks() {
+  return (
+    <div className="fireworks" aria-hidden="true">
+      {Array.from({ length: 14 }).map((_, index) => (
+        <i key={index} style={{ "--spark": index } as React.CSSProperties} />
+      ))}
     </div>
   );
 }

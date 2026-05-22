@@ -42,6 +42,7 @@ export type PokerGame = {
   message: string;
   history: string[];
   lastWinners: string[];
+  lastWinnerHand: string;
 };
 
 const ranks: Rank[] = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
@@ -178,6 +179,7 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
       `第 ${(previous?.handNumber ?? 0) + 1} 手开始，${players[sbIndex].name} 是 SB，${players[bbIndex].name} 是 BB，盲注 ${smallBlind}/${bigBlind}`,
     ],
     lastWinners: [],
+    lastWinnerHand: "",
   };
 
   return game;
@@ -337,15 +339,17 @@ function showdown(game: PokerGame) {
   }));
   const best = Math.max(...ranked.map((seat) => seat.value));
   const winners = ranked.filter((seat) => seat.value === best).map((seat) => seat.player);
-  awardPot(game, winners, `${winners.map((winner) => winner.name).join("、")} 摊牌赢下底池 ${game.pot}`);
+  const winnerHand = describeBestHand([...winners[0].hole, ...game.board]);
+  awardPot(game, winners, `${winners.map((winner) => winner.name).join("、")} 以${winnerHand}赢下底池 ${game.pot}`, winnerHand);
 }
 
-function awardPot(game: PokerGame, winners: PokerPlayer[], message: string) {
+function awardPot(game: PokerGame, winners: PokerPlayer[], message: string, winnerHand?: string) {
   const share = Math.floor(game.pot / winners.length);
   winners.forEach((winner) => {
     winner.stack += share;
   });
   game.lastWinners = winners.map((winner) => winner.id);
+  game.lastWinnerHand = winnerHand ?? "未摊牌";
   game.message = message;
   game.history = [message, ...game.history];
   game.pot = 0;
