@@ -53,8 +53,8 @@ function App() {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [botCount, setBotCount] = useState(3);
-  const [animationEnabled, setAnimationEnabled] = useState(false);
-  const [pokerGame, setPokerGame] = useState<PokerGame>(() => resolveBotsSync(createPokerGame(3)));
+  const [animationEnabled, setAnimationEnabled] = useState(true);
+  const [pokerGame, setPokerGame] = useState<PokerGame>(() => createPokerGame(3));
   const [actionEvent, setActionEvent] = useState<PokerActionEvent | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState("");
@@ -458,6 +458,35 @@ function PokerPractice({
   const canCheck = toCall === 0;
   const isShowdown = game.street === "showdown";
   const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
+  const [panelOffset, setPanelOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; panelX: number; panelY: number } | null>(null);
+  const panelStyle = {
+    "--panel-x": `${panelOffset.x}px`,
+    "--panel-y": `${panelOffset.y}px`,
+  } as React.CSSProperties;
+
+  function handlePanelPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragStart({
+      x: event.clientX,
+      y: event.clientY,
+      panelX: panelOffset.x,
+      panelY: panelOffset.y,
+    });
+  }
+
+  function handlePanelPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragStart) return;
+
+    const nextX = clamp(dragStart.panelX + event.clientX - dragStart.x, -110, 110);
+    const nextY = clamp(dragStart.panelY + event.clientY - dragStart.y, -260, 40);
+    setPanelOffset({ x: nextX, y: nextY });
+  }
+
+  function stopPanelDrag(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    setDragStart(null);
+  }
 
   return (
     <section className="play-layout">
@@ -508,7 +537,21 @@ function PokerPractice({
         </div>
       </article>
 
-      <aside className="action-panel">
+      <aside className="action-panel" style={panelStyle}>
+        <div
+          className="decision-drag-handle"
+          onDoubleClick={() => setPanelOffset({ x: 0, y: 0 })}
+          onPointerCancel={stopPanelDrag}
+          onPointerDown={handlePanelPointerDown}
+          onPointerMove={handlePanelPointerMove}
+          onPointerUp={stopPanelDrag}
+          role="button"
+          tabIndex={0}
+          title="拖动调整决策栏位置，双击复位"
+        >
+          <span />
+          拖动决策栏
+        </div>
         <div className="panel-title">
           <Sparkles size={18} aria-hidden="true" />
           当前决策
@@ -786,6 +829,10 @@ function readLocalAttempts(): Attempt[] {
   } catch {
     return [];
   }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function resolveBotsSync(game: PokerGame): PokerGame {

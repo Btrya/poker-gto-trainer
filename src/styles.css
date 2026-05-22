@@ -834,6 +834,10 @@ h2 {
   gap: 16px;
 }
 
+.decision-drag-handle {
+  display: none;
+}
+
 .action-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1293,7 +1297,7 @@ input:focus-visible {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .action-panel {
+  .section-practice .action-panel {
     position: fixed;
     z-index: 24;
     left: max(12px, env(safe-area-inset-left));
@@ -1304,13 +1308,39 @@ input:focus-visible {
     overflow: hidden;
     background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(18px);
+    transform: translate(var(--panel-x, 0), var(--panel-y, 0));
   }
 
-  .action-panel .panel-title {
+  .decision-drag-handle {
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    user-select: none;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .decision-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .decision-drag-handle span {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.42);
+  }
+
+  .section-practice .action-panel .panel-title {
     font-size: 0.86rem;
   }
 
-  .action-panel > p {
+  .section-practice .action-panel > p {
     margin-bottom: 0;
     font-size: 0.88rem;
     line-height: 1.35;
@@ -1320,22 +1350,22 @@ input:focus-visible {
     overflow: hidden;
   }
 
-  .action-panel .hero-hand {
+  .section-practice .action-panel .hero-hand {
     justify-content: flex-start;
   }
 
-  .action-panel .playing-card {
+  .section-practice .action-panel .playing-card {
     width: 30px;
     height: 42px;
   }
 
-  .action-panel .tip-box,
-  .action-panel .hand-history {
+  .section-practice .action-panel .tip-box,
+  .section-practice .action-panel .hand-history {
     display: none;
   }
 
-  .action-panel .primary-action,
-  .action-panel .secondary-action {
+  .section-practice .action-panel .primary-action,
+  .section-practice .action-panel .secondary-action {
     min-height: 44px;
     padding: 0 8px;
   }
@@ -1416,7 +1446,7 @@ input:focus-visible {
   }
 
   .poker-table-panel,
-  .action-panel {
+  .section-practice .action-panel {
     padding: 12px;
   }
 
