@@ -460,6 +460,7 @@ function PokerPractice({
   const canCheck = toCall === 0;
   const isShowdown = game.street === "showdown";
   const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
+  const heroCanAct = !isShowdown && !hero.folded && !hero.allIn && game.players[game.actionIndex]?.id === hero.id && !waitingForBot;
   const heroHandName = game.board.length > 0 ? describeBestHand([...hero.hole, ...game.board]) : "";
   const heroHandRank = game.board.length > 0 ? bestHandRank([...hero.hole, ...game.board]) : 0;
   const heroWon = isShowdown && game.lastWinners.includes(hero.id);
@@ -603,7 +604,7 @@ function PokerPractice({
           {heroHandName && <span className={handRankClass(heroHandRank)}>{heroHandName}</span>}
         </div>
 
-        {!isShowdown ? (
+        {heroCanAct ? (
           <div className="action-grid">
             <button className="secondary-action" disabled={waitingForBot} onClick={() => onAction("fold")} type="button">
               弃牌
@@ -618,6 +619,8 @@ function PokerPractice({
               All-in
             </button>
           </div>
+        ) : !isShowdown ? (
+          <div className="watching-state">{hero.folded ? "你已弃牌，观看本手结束" : hero.allIn ? "你已 All-in，等待发牌结算" : "等待对手行动"}</div>
         ) : (
           <button className="primary-action" onClick={onNewHand} type="button">
             下一手

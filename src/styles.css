@@ -980,6 +980,19 @@ h2 {
   gap: 10px;
 }
 
+.watching-state {
+  min-height: 46px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  background: rgba(15, 23, 42, 0.76);
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
 .tip-box {
   display: flex;
   align-items: flex-start;
@@ -1545,6 +1558,13 @@ input:focus-visible {
     font-size: 0.82rem;
     white-space: nowrap;
     border-radius: 12px;
+  }
+
+  .section-practice .action-panel .watching-state {
+    min-height: 40px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 0.82rem;
   }
 
   .pot-display {
