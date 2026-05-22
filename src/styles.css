@@ -524,8 +524,8 @@ h2 {
 }
 
 .play-toolbar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 16px;
   align-items: center;
   margin-bottom: 18px;
@@ -603,22 +603,16 @@ h2 {
 }
 
 .table-log {
-  position: absolute;
-  z-index: 4;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  width: min(86%, 520px);
+  width: 100%;
+  margin-top: 12px;
   display: grid;
   gap: 5px;
-  pointer-events: none;
 }
 
 .table-log span {
-  justify-self: center;
   max-width: 100%;
   border: 1px solid rgba(248, 250, 252, 0.16);
-  border-radius: 999px;
+  border-radius: 10px;
   background: rgba(2, 6, 23, 0.64);
   color: #cbd5e1;
   padding: 5px 10px;
@@ -653,7 +647,6 @@ h2 {
 }
 
 .result-banner span {
-  color: var(--amber);
   font-weight: 900;
 }
 
@@ -661,8 +654,49 @@ h2 {
   border-color: rgba(34, 197, 94, 0.56);
 }
 
-.result-banner.hero-win span {
-  color: var(--green);
+.hand-rank {
+  font-weight: 900;
+}
+
+.hand-rank-0 {
+  color: #94a3b8;
+}
+
+.hand-rank-1 {
+  color: #cbd5e1;
+}
+
+.hand-rank-2 {
+  color: #22c55e;
+}
+
+.hand-rank-3 {
+  color: #38bdf8;
+}
+
+.hand-rank-4 {
+  color: #60a5fa;
+}
+
+.hand-rank-5 {
+  color: #a78bfa;
+}
+
+.hand-rank-6 {
+  color: #f59e0b;
+}
+
+.hand-rank-7 {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.28);
+}
+
+.hand-rank-8 {
+  background: linear-gradient(90deg, #f87171, #fbbf24, #34d399, #38bdf8, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
 }
 
 .fireworks {
@@ -1323,16 +1357,30 @@ input:focus-visible {
   }
 
   .play-toolbar {
-    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(84px, auto) auto;
     gap: 12px;
+    align-items: end;
+  }
+
+  .play-toolbar h2 {
+    margin-bottom: 0;
   }
 
   .bot-select {
     min-width: 0;
+    gap: 4px;
   }
 
   .bot-select select {
     font-size: 16px;
+    min-height: 38px;
+    padding: 0 8px;
+  }
+
+  .animation-toggle {
+    min-height: 38px;
+    padding: 0 9px;
+    align-self: end;
   }
 
   .poker-felt {
@@ -1444,6 +1492,7 @@ input:focus-visible {
     justify-content: center;
     min-height: 38px;
     gap: 5px;
+    flex-wrap: nowrap;
   }
 
   .section-practice .action-panel .playing-card {
@@ -1454,9 +1503,9 @@ input:focus-visible {
   }
 
   .section-practice .action-panel .hero-hand > span:last-child:not(.playing-card) {
-    max-width: 100%;
-    flex-basis: 100%;
-    text-align: center;
+    max-width: calc(100% - 72px);
+    flex-basis: auto;
+    text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1485,8 +1534,7 @@ input:focus-visible {
   }
 
   .table-log {
-    bottom: 10px;
-    width: calc(100% - 28px);
+    margin-top: 10px;
     gap: 4px;
   }
 
@@ -1576,6 +1624,29 @@ input:focus-visible {
   .nav-button {
     min-height: 50px;
     font-size: 0.68rem;
+  }
+
+  .play-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(74px, auto) auto;
+    gap: 8px;
+  }
+
+  .play-toolbar h2 {
+    font-size: 1rem;
+  }
+
+  .bot-select {
+    font-size: 0.78rem;
+  }
+
+  .animation-toggle {
+    font-size: 0.78rem;
+    gap: 5px;
+  }
+
+  .animation-toggle input {
+    width: 16px;
+    height: 16px;
   }
 
   .poker-table-panel,

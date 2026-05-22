@@ -238,6 +238,10 @@ export function describeBestHand(cards: Card[]): string {
   return handNames[evaluateCards(cards).category];
 }
 
+export function bestHandRank(cards: Card[]): number {
+  return evaluateCards(cards).category;
+}
+
 function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction, toCall: number): PokerActionEvent {
   const playerIndex = game.players.findIndex((seat) => seat.id === player.id);
   let amount = 0;

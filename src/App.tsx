@@ -21,6 +21,7 @@ import { isSupabaseConfigured, supabase } from "./supabase";
 import {
   act,
   actNextBot,
+  bestHandRank,
   cardLabel,
   cardTone,
   createPokerGame,
@@ -459,6 +460,8 @@ function PokerPractice({
   const canCheck = toCall === 0;
   const isShowdown = game.street === "showdown";
   const waitingForBot = shouldBotAct(game) || Boolean(actionEvent);
+  const heroHandName = game.board.length > 0 ? describeBestHand([...hero.hole, ...game.board]) : "";
+  const heroHandRank = game.board.length > 0 ? bestHandRank([...hero.hole, ...game.board]) : 0;
   const heroWon = isShowdown && game.lastWinners.includes(hero.id);
   const winnerNames = game.lastWinners
     .map((winnerId) => game.players.find((player) => player.id === winnerId)?.name)
@@ -542,14 +545,9 @@ function PokerPractice({
           {isShowdown && (
             <div className={`result-banner ${heroWon ? "hero-win" : ""}`}>
               <strong>{heroWon ? "你赢了" : `${winnerNames} 获胜`}</strong>
-              <span>{game.lastWinnerHand}</span>
+              <span className={handRankClass(handNameToRank(game.lastWinnerHand))}>{game.lastWinnerHand}</span>
             </div>
           )}
-          <div className="table-log">
-            {game.history.slice(0, 3).map((line) => (
-              <span key={line}>{line}</span>
-            ))}
-          </div>
           <div className="community-board">
             {Array.from({ length: 5 }).map((_, index) => {
               const card = game.board[index];
@@ -570,6 +568,11 @@ function PokerPractice({
               index={index}
               winner={game.lastWinners.includes(player.id)}
             />
+          ))}
+        </div>
+        <div className="table-log">
+          {game.history.slice(0, 3).map((line) => (
+            <span key={line}>{line}</span>
           ))}
         </div>
       </article>
@@ -597,7 +600,7 @@ function PokerPractice({
           {hero.hole.map((card) => (
             <CardView card={card} key={card} />
           ))}
-          {game.board.length > 0 && <span>{describeBestHand([...hero.hole, ...game.board])}</span>}
+          {heroHandName && <span className={handRankClass(heroHandRank)}>{heroHandName}</span>}
         </div>
 
         {!isShowdown ? (
@@ -879,6 +882,16 @@ function readLocalAttempts(): Attempt[] {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function handRankClass(rank: number) {
+  return `hand-rank hand-rank-${rank}`;
+}
+
+function handNameToRank(name: string) {
+  const order = ["高牌", "一对", "两对", "三条", "顺子", "同花", "葫芦", "四条", "同花顺"];
+  const index = order.indexOf(name);
+  return index >= 0 ? index : 0;
 }
 
 function resolveBotsSync(game: PokerGame): PokerGame {
