@@ -614,6 +614,9 @@ function PokerPractice({
             <button className="primary-action" disabled={waitingForBot} onClick={() => onAction("bet")} type="button">
               {canCheck ? "下注" : "加压"}
             </button>
+            <button className="all-in-action" disabled={waitingForBot || hero.stack <= 0} onClick={() => onAction("all-in")} type="button">
+              All-in
+            </button>
           </div>
         ) : (
           <button className="primary-action" onClick={onNewHand} type="button">
@@ -714,7 +717,7 @@ function PlayerSeat({
           {blind && <span className="blind-chip">{blind}</span>}
         </span>
       </strong>
-      <span>{player.folded ? "已弃牌" : `${player.stack} 筹码`}</span>
+      <span>{player.folded ? "已弃牌" : player.allIn ? "All-in" : `${player.stack} 筹码`}</span>
       {player.botType && <em>{getBotProfile(player.botType)?.label}</em>}
     </div>
   );

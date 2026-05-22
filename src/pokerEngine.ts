@@ -2,7 +2,7 @@ export type Suit = "s" | "h" | "d" | "c";
 export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "Q" | "K" | "A";
 export type Card = `${Rank}${Suit}`;
 export type Street = "preflop" | "flop" | "turn" | "river" | "showdown";
-export type PlayerAction = "fold" | "call" | "check" | "bet";
+export type PlayerAction = "fold" | "call" | "check" | "bet" | "all-in";
 export type BotType = "beginner" | "calling-station" | "tight-weak" | "aggressive" | "balanced";
 export type PokerActionEvent = {
   id: string;
@@ -21,6 +21,7 @@ export type PokerPlayer = {
   stack: number;
   hole: Card[];
   folded: boolean;
+  allIn: boolean;
   contribution: number;
   hasActed: boolean;
 };
@@ -149,6 +150,7 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
     stack: previous?.players[index]?.stack && previous.players[index].stack > 0 ? previous.players[index].stack : 1000,
     hole: [deck.pop()!, deck.pop()!],
     folded: false,
+    allIn: false,
     contribution: 0,
     hasActed: false,
   }));
@@ -200,7 +202,7 @@ export function act(game: PokerGame, action: PlayerAction): { game: PokerGame; e
 
 export function shouldBotAct(game: PokerGame): boolean {
   const player = game.players[game.actionIndex];
-  return Boolean(player && !player.isHero && !player.folded && game.street !== "showdown");
+  return Boolean(player && !player.isHero && !player.folded && !player.allIn && game.street !== "showdown");
 }
 
 export function actNextBot(game: PokerGame): { game: PokerGame; event: PokerActionEvent | null } {
@@ -276,6 +278,21 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     player.hasActed = true;
     label = `${player.name} ${verb} ${amount}`;
     game.history = [label, ...game.history];
+  } else if (action === "all-in") {
+    amount = player.stack;
+    player.stack = 0;
+    player.contribution += amount;
+    player.allIn = true;
+    game.pot += amount;
+    if (player.contribution > game.currentBet) {
+      game.currentBet = player.contribution;
+      game.players.forEach((seat) => {
+        if (!seat.folded && !seat.allIn && seat.id !== player.id) seat.hasActed = false;
+      });
+    }
+    player.hasActed = true;
+    label = `${player.name} 全下 ${amount}`;
+    game.history = [label, ...game.history];
   } else {
     player.hasActed = true;
     label = `${player.name} 过牌`;
@@ -301,6 +318,11 @@ function settleIfNeeded(game: PokerGame) {
     return;
   }
 
+  if (livePlayers.every((player) => player.allIn)) {
+    runoutToShowdown(game);
+    return;
+  }
+
   if (!isBettingRoundComplete(game)) {
     game.actionIndex = nextActiveIndex(game, game.actionIndex);
     return;
@@ -312,7 +334,7 @@ function settleIfNeeded(game: PokerGame) {
 function advanceStreet(game: PokerGame) {
   game.players.forEach((player) => {
     player.contribution = 0;
-    player.hasActed = false;
+    player.hasActed = player.allIn;
   });
   game.currentBet = 0;
 
@@ -335,6 +357,14 @@ function advanceStreet(game: PokerGame) {
 
   game.history = [`进入${streetLabel(game.street)}：${game.board.map(cardLabel).join(" ")}`, ...game.history];
   game.actionIndex = firstPostflopIndex(game);
+}
+
+function runoutToShowdown(game: PokerGame) {
+  while (game.board.length < 5) {
+    game.board = [...game.board, game.deck.pop()!];
+  }
+  game.history = [`全下发完公共牌：${game.board.map(cardLabel).join(" ")}`, ...game.history];
+  showdown(game);
 }
 
 function showdown(game: PokerGame) {
@@ -370,6 +400,7 @@ function chooseBotAction(game: PokerGame, player: PokerPlayer, toCall: number): 
   const pressure = toCall / Math.max(1, game.pot + toCall);
 
   if (toCall > 0) {
+    if (strength > 0.86 && player.stack > 0 && Math.random() < profile.aggression * 0.12) return "all-in";
     if (strength > 0.74 && profile.aggression > 0.7 && Math.random() < 0.18) return "bet";
     const callScore = strength + profile.looseness * 0.16 - pressure * profile.priceSensitivity;
     if (callScore > 0.46) return "call";
@@ -378,6 +409,7 @@ function chooseBotAction(game: PokerGame, player: PokerPlayer, toCall: number): 
   }
 
   if (madeStrength > profile.valueThreshold) return "bet";
+  if (madeStrength > 0.88 && player.stack > 0 && Math.random() < profile.aggression * 0.1) return "all-in";
   if (drawStrength > 0.18 && Math.random() < profile.aggression * 0.55) return "bet";
   if (madeStrength > 0.48 && Math.random() < profile.aggression * 0.22) return "bet";
   if (madeStrength < 0.38 && Math.random() < profile.bluff) return "bet";
@@ -421,7 +453,7 @@ function estimateDrawStrength(game: PokerGame, player: PokerPlayer): number {
 }
 
 function isBettingRoundComplete(game: PokerGame): boolean {
-  return activePlayers(game).every((player) => player.hasActed && player.contribution === game.currentBet);
+  return activePlayers(game).every((player) => player.allIn || (player.hasActed && player.contribution === game.currentBet));
 }
 
 function firstPostflopIndex(game: PokerGame): number {

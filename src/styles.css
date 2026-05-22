@@ -113,6 +113,7 @@ h3 {
 .nav-button,
 .primary-action,
 .secondary-action,
+.all-in-action,
 .icon-button,
 .answer-option {
   border: 1px solid var(--line);
@@ -316,8 +317,23 @@ h2 {
   border-color: var(--muted);
 }
 
+.all-in-action {
+  border-radius: 14px;
+  min-height: 44px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+  background: #7f1d1d;
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fee2e2;
+}
+
 .primary-action:disabled,
-.secondary-action:disabled {
+.secondary-action:disabled,
+.all-in-action:disabled {
   cursor: wait;
   opacity: 0.52;
   box-shadow: none;
@@ -960,7 +976,7 @@ h2 {
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1521,7 +1537,8 @@ input:focus-visible {
   }
 
   .section-practice .action-panel .primary-action,
-  .section-practice .action-panel .secondary-action {
+  .section-practice .action-panel .secondary-action,
+  .section-practice .action-panel .all-in-action {
     min-height: 40px;
     padding: 0 4px;
     font-size: 0.82rem;
@@ -1681,7 +1698,8 @@ input:focus-visible {
   }
 
   .section-practice .action-panel .primary-action,
-  .section-practice .action-panel .secondary-action {
+  .section-practice .action-panel .secondary-action,
+  .section-practice .action-panel .all-in-action {
     min-height: 36px;
     font-size: 0.76rem;
   }
