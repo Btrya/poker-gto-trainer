@@ -496,6 +496,229 @@ h2 {
   align-items: start;
 }
 
+.play-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.poker-table-panel,
+.action-panel {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.poker-table-panel,
+.action-panel {
+  padding: 22px;
+}
+
+.play-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.bot-select {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 700;
+  min-width: 120px;
+}
+
+.bot-select select {
+  border: 1px solid var(--line);
+  background: #020617;
+  color: var(--text);
+  border-radius: 12px;
+  min-height: 42px;
+  padding: 0 12px;
+  font: inherit;
+}
+
+.poker-felt {
+  position: relative;
+  min-height: 560px;
+  border-radius: 42%;
+  border: 16px solid #273449;
+  background:
+    radial-gradient(circle at center, rgba(34, 197, 94, 0.18), transparent 38%),
+    radial-gradient(circle, #166534 0%, #064e3b 72%);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.42), 0 24px 60px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.community-board {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+}
+
+.pot-display {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.62);
+  padding: 8px 14px;
+  font-weight: 800;
+}
+
+.player-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 124px;
+  min-height: 96px;
+  border: 1px solid rgba(248, 250, 252, 0.16);
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.76);
+  padding: 10px;
+  display: grid;
+  gap: 5px;
+  text-align: center;
+  justify-items: center;
+}
+
+.player-seat.acting {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+}
+
+.player-seat.folded {
+  opacity: 0.48;
+}
+
+.player-seat.winner {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+.player-seat strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.player-seat span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.dealer-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: #f8fafc;
+  color: #0f172a !important;
+  font-size: 0.7rem !important;
+  font-weight: 900;
+}
+
+.mini-cards,
+.hero-hand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-hand {
+  flex-wrap: wrap;
+}
+
+.hero-hand > span:last-child:not(.playing-card) {
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.playing-card,
+.empty-card,
+.card-back {
+  width: 44px;
+  height: 62px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.playing-card {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.playing-card.red {
+  color: #dc2626;
+}
+
+.playing-card.compact,
+.card-back {
+  width: 30px;
+  height: 42px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.empty-card {
+  border: 1px dashed rgba(248, 250, 252, 0.28);
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.card-back {
+  background: repeating-linear-gradient(135deg, #1e293b 0 6px, #334155 6px 12px);
+  border: 1px solid rgba(248, 250, 252, 0.2);
+}
+
+.action-panel {
+  position: sticky;
+  top: 30px;
+  display: grid;
+  gap: 16px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tip-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #111827;
+  line-height: 1.45;
+}
+
+.hand-history {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hand-history span {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
 .meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -584,7 +807,7 @@ input:focus-visible {
   }
 
   .nav-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .sync-panel {
@@ -593,7 +816,8 @@ input:focus-visible {
 
   .hero-panel,
   .wide-panel,
-  .practice-layout {
+  .practice-layout,
+  .play-layout {
     grid-template-columns: 1fr;
   }
 
@@ -601,7 +825,8 @@ input:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .explain-panel {
+  .explain-panel,
+  .action-panel {
     position: static;
   }
 }
@@ -683,7 +908,7 @@ input:focus-visible {
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(10px + env(safe-area-inset-bottom));
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     padding: 8px;
     border: 1px solid rgba(39, 52, 73, 0.94);
@@ -702,6 +927,11 @@ input:focus-visible {
     border-radius: 14px;
     font-size: 0.78rem;
     white-space: nowrap;
+  }
+
+  .nav-button svg {
+    width: 17px;
+    height: 17px;
   }
 
   .hero-panel {
@@ -757,9 +987,62 @@ input:focus-visible {
   .lesson-row,
   .question-panel,
   .explain-panel,
-  .wide-panel {
+  .wide-panel,
+  .poker-table-panel,
+  .action-panel {
     padding: 16px;
     border-radius: 16px;
+  }
+
+  .play-toolbar {
+    display: grid;
+    gap: 12px;
+  }
+
+  .bot-select {
+    min-width: 0;
+  }
+
+  .bot-select select {
+    font-size: 16px;
+  }
+
+  .poker-felt {
+    min-height: 430px;
+    border-width: 10px;
+    border-radius: 32px;
+  }
+
+  .player-seat {
+    width: 102px;
+    min-height: 86px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .player-seat span {
+    font-size: 0.74rem;
+  }
+
+  .playing-card,
+  .empty-card {
+    width: 36px;
+    height: 52px;
+    border-radius: 9px;
+  }
+
+  .playing-card.compact,
+  .card-back {
+    width: 26px;
+    height: 36px;
+  }
+
+  .community-board {
+    gap: 5px;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
   }
 
   .lesson-row {

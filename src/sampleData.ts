@@ -2,6 +2,105 @@ import type { Lesson, Question, Term } from "./types";
 
 export const terms: Term[] = [
   {
+    id: "term-button",
+    slug: "button",
+    title: "按钮位 BTN",
+    category: "牌桌位置",
+    difficulty: "beginner",
+    summary: "按钮位是每手牌最后行动优势最明显的位置。",
+    content:
+      "BTN 是 Button，也叫庄位或按钮位。德扑里按钮会每手顺时针移动。翻牌后，按钮位通常最后行动，所以能看到别人先怎么做，再决定下注、过牌或跟注，这是很大的信息优势。",
+    examples: ["前面都弃牌时，BTN 可以用比前位更宽的范围开池。", "BTN vs BB 是最常见的单挑训练场景之一。"],
+  },
+  {
+    id: "term-blinds",
+    slug: "small-blind-big-blind",
+    title: "小盲 / 大盲",
+    category: "牌桌位置",
+    difficulty: "beginner",
+    summary: "每手牌开始前强制投入的两个盲注。",
+    content:
+      "按钮左边是小盲 SB，小盲左边是大盲 BB。盲注是强制投入，用来让底池一开始就有筹码。盲注位翻后通常位置不好，所以即使已经投入筹码，也不能什么牌都硬防守。",
+    examples: ["盲注 10/20 表示小盲先放 10，大盲先放 20。", "BB 面对 BTN 开池时，因为已经投入大盲，防守范围会比其他位置宽。"],
+  },
+  {
+    id: "term-position",
+    slug: "position",
+    title: "位置",
+    category: "牌桌位置",
+    difficulty: "beginner",
+    summary: "你在一手牌中行动顺序的相对位置。",
+    content:
+      "位置决定你能不能后行动。后行动可以先看到对手选择，信息更多，错误更少。新手学习德扑时，位置比单手牌牌力更重要：同一手 KJo，在 BTN 可能能玩，在 UTG 通常就太松。",
+    examples: ["BTN 是最好的位置。", "UTG 是前位，后面很多人没行动，所以范围要紧。"],
+  },
+  {
+    id: "term-streets",
+    slug: "streets",
+    title: "翻前 / 翻牌 / 转牌 / 河牌",
+    category: "基本规则",
+    difficulty: "beginner",
+    summary: "一手德扑分成四个主要决策阶段。",
+    content:
+      "翻前是只拿到两张手牌时的阶段；翻牌是发出三张公共牌；转牌是第四张公共牌；河牌是第五张公共牌。每个阶段都可能有下注、跟注、加注、弃牌或过牌。",
+    examples: ["A♠K♠ 翻前很强，但翻牌没中也不一定能一直下注。", "河牌没有后续发牌，决策更接近最终摊牌。"],
+  },
+  {
+    id: "term-community-cards",
+    slug: "community-cards",
+    title: "公共牌",
+    category: "基本规则",
+    difficulty: "beginner",
+    summary: "桌面上所有玩家都能使用的牌。",
+    content:
+      "德州扑克每个玩家有两张私有手牌，桌面最多五张公共牌。最终从两张手牌和五张公共牌里选出最好的五张牌比大小。",
+    examples: ["你拿 A♠K♠，桌面 A♥7♦2♣，你至少有一对 A。", "如果公共牌自己已经是顺子，所有还在牌局的人都能使用这副顺子。"],
+  },
+  {
+    id: "term-pot",
+    slug: "pot",
+    title: "底池",
+    category: "基本规则",
+    difficulty: "beginner",
+    summary: "所有玩家已经投入、等待争夺的筹码。",
+    content:
+      "底池是这手牌的奖金池。下注和跟注会让底池变大。很多决策都要看底池大小，比如底池赔率、下注尺度、bluff 需要成功的频率。",
+    examples: ["底池 100，你下注 50，就是半池下注。", "对手下注越大，你跟注需要的胜率通常越高。"],
+  },
+  {
+    id: "term-check-call-bet-raise-fold",
+    slug: "actions",
+    title: "过牌 / 下注 / 跟注 / 加注 / 弃牌",
+    category: "基本动作",
+    difficulty: "beginner",
+    summary: "德扑里最常用的五类行动。",
+    content:
+      "过牌 check 是没人下注时选择不下注；下注 bet 是主动投入筹码；跟注 call 是补齐对手下注；加注 raise 是在对手下注基础上再提高价格；弃牌 fold 是放弃这手牌，不再争夺底池。",
+    examples: ["没人下注时你不能 call，只能 check 或 bet。", "有人下注后，你可以 fold、call 或 raise。"],
+  },
+  {
+    id: "term-showdown",
+    slug: "showdown",
+    title: "摊牌",
+    category: "基本规则",
+    difficulty: "beginner",
+    summary: "河牌后仍有多人未弃牌时，比牌决定赢家。",
+    content:
+      "如果最后还有两个或更多玩家没有弃牌，就进入摊牌。系统会比较每个人最好的五张牌。也有很多手牌不摊牌就结束，因为其他人都弃牌了。",
+    examples: ["你下注，所有人弃牌，你不用亮牌也能赢底池。", "河牌你跟注后双方摊牌，比谁的五张牌更大。"],
+  },
+  {
+    id: "term-all-in",
+    slug: "all-in",
+    title: "All-in 全下",
+    category: "基本动作",
+    difficulty: "beginner",
+    summary: "把自己剩余筹码全部投入这手牌。",
+    content:
+      "All-in 是把当前剩余筹码全部放进底池。全下后你不能再做更多行动，只等待后续发牌和结算。多人全下时可能出现边池，这会让结算更复杂。",
+    examples: ["短码玩家翻前可能用强牌直接 all-in。", "多人筹码不同全下时，需要按每个人可争夺的金额分主池和边池。"],
+  },
+  {
     id: "term-gto",
     slug: "gto",
     title: "GTO",

@@ -6,24 +6,39 @@ import {
   CircleUserRound,
   Database,
   GraduationCap,
+  HelpCircle,
   Layers3,
   LogIn,
   LogOut,
+  Play,
   RotateCcw,
   Sparkles,
   Target,
 } from "lucide-react";
 import { lessons as fallbackLessons, questions as fallbackQuestions, terms as fallbackTerms } from "./sampleData";
 import { isSupabaseConfigured, supabase } from "./supabase";
+import {
+  act,
+  activePlayers,
+  cardLabel,
+  cardTone,
+  createPokerGame,
+  describeBestHand,
+  heroToCall,
+  type PlayerAction,
+  type PokerGame,
+  type PokerPlayer,
+} from "./pokerEngine";
 import type { Attempt, Lesson, Question, Term } from "./types";
 
-type Section = "overview" | "terms" | "lessons" | "practice";
+type Section = "overview" | "terms" | "lessons" | "practice" | "quiz";
 
 const navItems: Array<{ id: Section; label: string; icon: typeof BookOpen }> = [
   { id: "overview", label: "总览", icon: Target },
   { id: "terms", label: "术语库", icon: BookOpen },
   { id: "lessons", label: "策略课", icon: GraduationCap },
-  { id: "practice", label: "练习", icon: Brain },
+  { id: "practice", label: "牌局", icon: Play },
+  { id: "quiz", label: "题库", icon: Brain },
 ];
 
 function App() {
@@ -34,6 +49,8 @@ function App() {
   const [attempts, setAttempts] = useState<Attempt[]>(() => readLocalAttempts());
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [botCount, setBotCount] = useState(3);
+  const [pokerGame, setPokerGame] = useState<PokerGame>(() => createPokerGame(3));
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
@@ -154,6 +171,15 @@ function App() {
     localStorage.removeItem("poker-gto-attempts");
   }
 
+  function startNewPokerHand(nextBotCount = botCount) {
+    setBotCount(nextBotCount);
+    setPokerGame((current) => createPokerGame(nextBotCount, current));
+  }
+
+  function handlePokerAction(action: PlayerAction) {
+    setPokerGame((current) => act(current, action));
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="主导航">
@@ -223,6 +249,15 @@ function App() {
         {section === "terms" && <Terms terms={terms} />}
         {section === "lessons" && <Lessons lessons={lessons} />}
         {section === "practice" && (
+          <PokerPractice
+            botCount={botCount}
+            game={pokerGame}
+            onAction={handlePokerAction}
+            onBotCountChange={startNewPokerHand}
+            onNewHand={() => startNewPokerHand()}
+          />
+        )}
+        {section === "quiz" && (
           <Practice
             activeQuestion={activeQuestion}
             answeredCurrent={answeredCurrent}
@@ -314,13 +349,13 @@ function Overview({
       <div className="hero-panel">
         <div className="hero-copy">
           <p className="eyebrow">今日训练重点</p>
-          <h2>先建立基准策略，再学习如何偏离它。</h2>
+          <h2>先坐下来打几手，再用术语和题库补概念。</h2>
           <p>
-            这个版本把术语、GTO 基础、剥削调整和互动题库放在一个学习流里。后面接上 Supabase 后，你可以直接在云端维护题库和同步个人进度。
+            牌局训练支持设置机器人数量，按真实德扑流程发牌、行动、摊牌和结算。术语库会从按钮位、大小盲、底池这些基础概念讲起，再逐步进入 GTO 和剥削策略。
           </p>
           <button className="primary-action" onClick={onStartPractice} type="button">
-            <Brain size={18} aria-hidden="true" />
-            开始练习
+            <Play size={18} aria-hidden="true" />
+            开始牌局
           </button>
         </div>
         <div className="table-visual" aria-label="扑克训练桌示意">
@@ -339,7 +374,7 @@ function Overview({
 
       <StatCard label="术语" value={termCount} detail="GTO / EV / MDF / blocker" />
       <StatCard label="课程" value={lessonCount} detail="短内容，适合反复看" />
-      <StatCard label="题目" value={questionCount} detail="翻前、概念、剥削策略" />
+      <StatCard label="题库" value={questionCount} detail="翻前、概念、剥削策略" />
       <StatCard label="正确率" value={`${stats.accuracy}%`} detail={`${stats.correct}/${stats.total} 已完成`} />
 
       <div className="wide-panel">
@@ -353,6 +388,156 @@ function Overview({
       </div>
     </section>
   );
+}
+
+function PokerPractice({
+  botCount,
+  game,
+  onAction,
+  onBotCountChange,
+  onNewHand,
+}: {
+  botCount: number;
+  game: PokerGame;
+  onAction: (action: PlayerAction) => void;
+  onBotCountChange: (count: number) => void;
+  onNewHand: () => void;
+}) {
+  const hero = game.players.find((player) => player.isHero)!;
+  const toCall = heroToCall(game);
+  const canCheck = toCall === 0;
+  const isShowdown = game.street === "showdown";
+
+  return (
+    <section className="play-layout">
+      <article className="poker-table-panel">
+        <div className="play-toolbar">
+          <div>
+            <p className="eyebrow">Hand #{game.handNumber}</p>
+            <h2>单人实战牌局</h2>
+          </div>
+          <label className="bot-select">
+            机器人
+            <select value={botCount} onChange={(event) => onBotCountChange(Number(event.target.value))}>
+              {[1, 2, 3, 4, 5].map((count) => (
+                <option key={count} value={count}>
+                  {count} 个
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="poker-felt" aria-label="德扑牌桌">
+          <div className="community-board">
+            {Array.from({ length: 5 }).map((_, index) => {
+              const card = game.board[index];
+              return card ? <CardView card={card} key={card} /> : <span className="empty-card" key={index} />;
+            })}
+          </div>
+          <div className="pot-display">底池 {game.pot}</div>
+          {game.players.map((player, index) => (
+            <PlayerSeat
+              active={game.actionIndex === index && !isShowdown}
+              dealer={game.dealerIndex === index}
+              key={player.id}
+              player={player}
+              reveal={player.isHero || isShowdown}
+              total={game.players.length}
+              index={index}
+              winner={game.lastWinners.includes(player.id)}
+            />
+          ))}
+        </div>
+      </article>
+
+      <aside className="action-panel">
+        <div className="panel-title">
+          <Sparkles size={18} aria-hidden="true" />
+          当前决策
+        </div>
+        <p>{game.message}</p>
+        <div className="hero-hand">
+          {hero.hole.map((card) => (
+            <CardView card={card} key={card} />
+          ))}
+          {game.board.length > 0 && <span>{describeBestHand([...hero.hole, ...game.board])}</span>}
+        </div>
+
+        {!isShowdown ? (
+          <div className="action-grid">
+            <button className="secondary-action" onClick={() => onAction("fold")} type="button">
+              弃牌
+            </button>
+            <button className="secondary-action" onClick={() => onAction(canCheck ? "check" : "call")} type="button">
+              {canCheck ? "过牌" : `跟注 ${toCall}`}
+            </button>
+            <button className="primary-action" onClick={() => onAction("bet")} type="button">
+              {canCheck ? "下注" : "加压"}
+            </button>
+          </div>
+        ) : (
+          <button className="primary-action" onClick={onNewHand} type="button">
+            下一手
+          </button>
+        )}
+
+        <div className="tip-box">
+          <HelpCircle size={16} aria-hidden="true" />
+          <span>第一版机器人是规则模型，不是 solver。目标是练流程、位置、下注和复盘。</span>
+        </div>
+
+        <div className="hand-history">
+          {game.history.slice(0, 7).map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </div>
+      </aside>
+    </section>
+  );
+}
+
+function PlayerSeat({
+  active,
+  dealer,
+  index,
+  player,
+  reveal,
+  total,
+  winner,
+}: {
+  active: boolean;
+  dealer: boolean;
+  index: number;
+  player: PokerPlayer;
+  reveal: boolean;
+  total: number;
+  winner: boolean;
+}) {
+  const angle = -90 + index * (360 / total);
+  const radius = 42;
+  const x = 50 + radius * Math.cos((angle * Math.PI) / 180);
+  const y = 50 + radius * Math.sin((angle * Math.PI) / 180);
+
+  return (
+    <div
+      className={`player-seat ${active ? "acting" : ""} ${player.folded ? "folded" : ""} ${winner ? "winner" : ""}`}
+      style={{ left: `${x}%`, top: `${y}%` }}
+    >
+      <div className="mini-cards">
+        {player.hole.map((card, cardIndex) => (reveal ? <CardView card={card} compact key={card} /> : <span className="card-back" key={cardIndex} />))}
+      </div>
+      <strong>
+        {player.name}
+        {dealer && <span className="dealer-chip">D</span>}
+      </strong>
+      <span>{player.folded ? "已弃牌" : `${player.stack} 筹码`}</span>
+    </div>
+  );
+}
+
+function CardView({ card, compact = false }: { card: string; compact?: boolean }) {
+  return <span className={`playing-card ${cardTone(card as never)} ${compact ? "compact" : ""}`}>{cardLabel(card as never)}</span>;
 }
 
 function StatCard({ detail, label, value }: { detail: string; label: string; value: number | string }) {
