@@ -23,6 +23,7 @@ export type PokerPlayer = {
   folded: boolean;
   allIn: boolean;
   contribution: number;
+  committed: number;
   hasActed: boolean;
 };
 
@@ -152,6 +153,7 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
     folded: false,
     allIn: false,
     contribution: 0,
+    committed: 0,
     hasActed: false,
   }));
 
@@ -259,6 +261,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     amount = Math.min(toCall, player.stack);
     player.stack -= amount;
     player.contribution += amount;
+    player.committed += amount;
     game.pot += amount;
     markAllInIfNeeded(player);
     player.hasActed = true;
@@ -271,6 +274,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     const verb = game.currentBet > 0 ? "加注" : "下注";
     player.stack -= amount;
     player.contribution += amount;
+    player.committed += amount;
     game.pot += amount;
     markAllInIfNeeded(player);
     game.currentBet = player.contribution;
@@ -284,6 +288,7 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     amount = player.stack;
     player.stack = 0;
     player.contribution += amount;
+    player.committed += amount;
     player.allIn = true;
     game.pot += amount;
     if (player.contribution > game.currentBet) {
@@ -316,7 +321,7 @@ function settleIfNeeded(game: PokerGame) {
   const livePlayers = activePlayers(game);
   if (livePlayers.length === 1) {
     const winnerHand = describeBestHand([...livePlayers[0].hole, ...game.board]);
-    awardPot(game, [livePlayers[0]], `${livePlayers[0].name} 以${winnerHand}赢下底池 ${game.pot}`, winnerHand);
+    awardWholePot(game, [livePlayers[0]], `${livePlayers[0].name} 以${winnerHand}赢下底池 ${game.pot}`, winnerHand);
     return;
   }
 
@@ -383,10 +388,10 @@ function showdown(game: PokerGame) {
   const best = Math.max(...ranked.map((seat) => seat.value));
   const winners = ranked.filter((seat) => seat.value === best).map((seat) => seat.player);
   const winnerHand = describeBestHand([...winners[0].hole, ...game.board]);
-  awardPot(game, winners, `${winners.map((winner) => winner.name).join("、")} 以${winnerHand}赢下底池 ${game.pot}`, winnerHand);
+  awardShowdownPots(game, livePlayers, winnerHand);
 }
 
-function awardPot(game: PokerGame, winners: PokerPlayer[], message: string, winnerHand?: string) {
+function awardWholePot(game: PokerGame, winners: PokerPlayer[], message: string, winnerHand?: string) {
   const share = Math.floor(game.pot / winners.length);
   winners.forEach((winner) => {
     winner.stack += share;
@@ -397,6 +402,67 @@ function awardPot(game: PokerGame, winners: PokerPlayer[], message: string, winn
   game.history = [message, ...game.history];
   game.pot = 0;
   game.street = "showdown";
+}
+
+function awardShowdownPots(game: PokerGame, livePlayers: PokerPlayer[], fallbackWinnerHand: string) {
+  const pots = buildSidePots(game.players);
+  const allWinnerIds = new Set<string>();
+  const messages: string[] = [];
+  let displayedWinnerHand = fallbackWinnerHand;
+
+  pots.forEach((pot, index) => {
+    const eligible = livePlayers.filter((player) => pot.eligibleIds.includes(player.id));
+    if (eligible.length === 0 || pot.amount <= 0) return;
+
+    const ranked = eligible.map((player) => ({
+      player,
+      value: evaluateCards([...player.hole, ...game.board]).value,
+    }));
+    const best = Math.max(...ranked.map((seat) => seat.value));
+    const winners = ranked.filter((seat) => seat.value === best).map((seat) => seat.player);
+    const share = Math.floor(pot.amount / winners.length);
+    const remainder = pot.amount % winners.length;
+
+    winners.forEach((winner, winnerIndex) => {
+      winner.stack += share + (winnerIndex === 0 ? remainder : 0);
+      allWinnerIds.add(winner.id);
+    });
+
+    const handName = describeBestHand([...winners[0].hole, ...game.board]);
+    if (index === 0) displayedWinnerHand = handName;
+    if (winners.some((winner) => winner.isHero)) displayedWinnerHand = handName;
+
+    const potName = index === 0 ? "主池" : `边池 ${index}`;
+    messages.push(`${winners.map((winner) => winner.name).join("、")} 以${handName}赢下${potName} ${pot.amount}`);
+  });
+
+  const message = messages.length > 0 ? messages.join("；") : `${livePlayers[0].name} 赢下底池 ${game.pot}`;
+  game.lastWinners = [...allWinnerIds];
+  game.lastWinnerHand = displayedWinnerHand;
+  game.message = message;
+  game.history = [message, ...game.history];
+  game.pot = 0;
+  game.street = "showdown";
+}
+
+function buildSidePots(players: PokerPlayer[]): { amount: number; eligibleIds: string[] }[] {
+  const levels = [...new Set(players.map((player) => player.committed).filter((amount) => amount > 0))].sort((a, b) => a - b);
+  const pots: { amount: number; eligibleIds: string[] }[] = [];
+  let previousLevel = 0;
+
+  levels.forEach((level) => {
+    const contributors = players.filter((player) => player.committed >= level);
+    const amount = (level - previousLevel) * contributors.length;
+    const eligibleIds = contributors.filter((player) => !player.folded).map((player) => player.id);
+
+    if (amount > 0 && eligibleIds.length > 0) {
+      pots.push({ amount, eligibleIds });
+    }
+
+    previousLevel = level;
+  });
+
+  return pots;
 }
 
 function chooseBotAction(game: PokerGame, player: PokerPlayer, toCall: number): PlayerAction {
@@ -483,6 +549,7 @@ function nextIndex(index: number, length: number): number {
 function postBlind(player: PokerPlayer, blind: number) {
   player.stack -= blind;
   player.contribution += blind;
+  player.committed += blind;
   markAllInIfNeeded(player);
 }
 
