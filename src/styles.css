@@ -1471,8 +1471,8 @@ input:focus-visible {
   }
 
   .action-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .section-practice .action-panel {
@@ -1482,7 +1482,7 @@ input:focus-visible {
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(10px + env(safe-area-inset-bottom));
     gap: 7px;
-    max-height: 150px;
+    max-height: 176px;
     overflow: hidden;
     background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(18px);
@@ -1553,9 +1553,9 @@ input:focus-visible {
   .section-practice .action-panel .primary-action,
   .section-practice .action-panel .secondary-action,
   .section-practice .action-panel .all-in-action {
-    min-height: 40px;
+    min-height: 34px;
     padding: 0 4px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     white-space: nowrap;
     border-radius: 12px;
   }
@@ -1696,7 +1696,7 @@ input:focus-visible {
   }
 
   .section-practice .action-panel {
-    max-height: 138px;
+    max-height: 164px;
     gap: 6px;
   }
 
@@ -1721,7 +1721,7 @@ input:focus-visible {
   .section-practice .action-panel .primary-action,
   .section-practice .action-panel .secondary-action,
   .section-practice .action-panel .all-in-action {
-    min-height: 36px;
+    min-height: 32px;
     font-size: 0.76rem;
   }
 

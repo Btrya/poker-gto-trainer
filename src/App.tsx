@@ -29,8 +29,8 @@ import {
   getBotProfile,
   heroToCall,
   shouldBotAct,
+  type PlayerDecision,
   type PokerActionEvent,
-  type PlayerAction,
   type PokerGame,
   type PokerPlayer,
 } from "./pokerEngine";
@@ -215,9 +215,9 @@ function App() {
     });
   }
 
-  function handlePokerAction(action: PlayerAction) {
+  function handlePokerAction(decision: PlayerDecision) {
     setPokerGame((current) => {
-      const result = act(current, action);
+      const result = act(current, decision);
       setActionEvent(animationEnabled ? result.event : null);
       return animationEnabled ? result.game : resolveBotsSync(result.game);
     });
@@ -450,7 +450,7 @@ function PokerPractice({
   animationEnabled: boolean;
   botCount: number;
   game: PokerGame;
-  onAction: (action: PlayerAction) => void;
+  onAction: (decision: PlayerDecision) => void;
   onBotCountChange: (count: number) => void;
   onToggleAnimation: (enabled: boolean) => void;
   onNewHand: () => void;
@@ -463,6 +463,12 @@ function PokerPractice({
   const heroCanAct = !isShowdown && !hero.folded && !hero.allIn && game.players[game.actionIndex]?.id === hero.id && !waitingForBot;
   const heroHandName = game.board.length > 0 ? describeBestHand([...hero.hole, ...game.board]) : "";
   const heroHandRank = game.board.length > 0 ? bestHandRank([...hero.hole, ...game.board]) : 0;
+  const maxHeroContribution = hero.contribution + hero.stack;
+  const betOptions = [
+    { label: "1/3池", target: buildBetTarget(game, hero, toCall, 1 / 3) },
+    { label: "1/2池", target: buildBetTarget(game, hero, toCall, 1 / 2) },
+    { label: "底池", target: buildBetTarget(game, hero, toCall, 1) },
+  ].filter((option, index, options) => option.target < maxHeroContribution && options.findIndex((item) => item.target === option.target) === index);
   const heroWon = isShowdown && game.lastWinners.includes(hero.id);
   const winnerNames = game.lastWinners
     .map((winnerId) => game.players.find((player) => player.id === winnerId)?.name)
@@ -612,9 +618,17 @@ function PokerPractice({
             <button className="secondary-action" disabled={waitingForBot} onClick={() => onAction(canCheck ? "check" : "call")} type="button">
               {canCheck ? "过牌" : `跟注 ${toCall}`}
             </button>
-            <button className="primary-action" disabled={waitingForBot} onClick={() => onAction("bet")} type="button">
-              {canCheck ? "下注" : "加压"}
-            </button>
+            {betOptions.map((option) => (
+              <button
+                className="primary-action"
+                disabled={waitingForBot}
+                key={`${option.label}-${option.target}`}
+                onClick={() => onAction({ action: "bet", targetContribution: option.target })}
+                type="button"
+              >
+                {canCheck ? option.label : `加${option.label}`}
+              </button>
+            ))}
             <button className="all-in-action" disabled={waitingForBot || hero.stack <= 0} onClick={() => onAction("all-in")} type="button">
               All-in
             </button>
@@ -888,6 +902,15 @@ function readLocalAttempts(): Attempt[] {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function buildBetTarget(game: PokerGame, hero: PokerPlayer, toCall: number, potMultiplier: number) {
+  const maxContribution = hero.contribution + hero.stack;
+  const potAfterCall = game.pot + toCall;
+  const size = Math.max(game.bigBlind, Math.round(potAfterCall * potMultiplier));
+  const target = game.currentBet > 0 ? game.currentBet + size : size;
+
+  return clamp(target, game.bigBlind, maxContribution);
 }
 
 function handRankClass(rank: number) {

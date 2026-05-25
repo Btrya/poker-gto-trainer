@@ -3,6 +3,7 @@ export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "
 export type Card = `${Rank}${Suit}`;
 export type Street = "preflop" | "flop" | "turn" | "river" | "showdown";
 export type PlayerAction = "fold" | "call" | "check" | "bet" | "all-in";
+export type PlayerDecision = PlayerAction | { action: "bet"; targetContribution: number };
 export type BotType = "beginner" | "calling-station" | "tight-weak" | "aggressive" | "balanced";
 export type PokerActionEvent = {
   id: string;
@@ -189,7 +190,7 @@ export function createPokerGame(botCount: number, previous?: PokerGame): PokerGa
   return game;
 }
 
-export function act(game: PokerGame, action: PlayerAction): { game: PokerGame; event: PokerActionEvent | null } {
+export function act(game: PokerGame, decision: PlayerDecision): { game: PokerGame; event: PokerActionEvent | null } {
   if (game.street === "showdown") return { game, event: null };
 
   const nextGame = cloneGame(game);
@@ -198,7 +199,7 @@ export function act(game: PokerGame, action: PlayerAction): { game: PokerGame; e
 
   if (!player.isHero || player.folded) return { game: nextGame, event: null };
 
-  const event = applyAction(nextGame, player, action, toCall);
+  const event = applyAction(nextGame, player, decision, toCall);
   return { game: nextGame, event };
 }
 
@@ -213,8 +214,8 @@ export function actNextBot(game: PokerGame): { game: PokerGame; event: PokerActi
   const nextGame = cloneGame(game);
   const player = nextGame.players[nextGame.actionIndex];
   const toCall = Math.max(0, nextGame.currentBet - player.contribution);
-  const action = chooseBotAction(nextGame, player, toCall);
-  const event = applyAction(nextGame, player, action, toCall);
+  const decision = chooseBotAction(nextGame, player, toCall);
+  const event = applyAction(nextGame, player, decision, toCall);
   return { game: nextGame, event };
 }
 
@@ -247,7 +248,8 @@ export function bestHandRank(cards: Card[]): number {
   return evaluateCards(cards).category;
 }
 
-function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction, toCall: number): PokerActionEvent {
+function applyAction(game: PokerGame, player: PokerPlayer, decision: PlayerDecision, toCall: number): PokerActionEvent {
+  const action = typeof decision === "string" ? decision : decision.action;
   const playerIndex = game.players.findIndex((seat) => seat.id === player.id);
   let amount = 0;
   let label = "";
@@ -269,7 +271,9 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     game.history = [label, ...game.history];
   } else if (action === "bet") {
     const raiseSize = Math.max(game.bigBlind, Math.round(game.pot * 0.55));
-    const targetContribution = game.currentBet > 0 ? game.currentBet + raiseSize : raiseSize;
+    const requestedTarget = typeof decision === "string" ? undefined : decision.targetContribution;
+    const defaultTarget = game.currentBet > 0 ? game.currentBet + raiseSize : raiseSize;
+    const targetContribution = Math.max(game.currentBet > 0 ? game.currentBet + game.bigBlind : game.bigBlind, requestedTarget ?? defaultTarget);
     amount = Math.min(Math.max(0, targetContribution - player.contribution), player.stack);
     const verb = game.currentBet > 0 ? "加注" : "下注";
     player.stack -= amount;
@@ -277,12 +281,14 @@ function applyAction(game: PokerGame, player: PokerPlayer, action: PlayerAction,
     player.committed += amount;
     game.pot += amount;
     markAllInIfNeeded(player);
-    game.currentBet = player.contribution;
-    game.players.forEach((seat) => {
-      if (!seat.folded && seat.id !== player.id) seat.hasActed = false;
-    });
+    if (player.contribution > game.currentBet) {
+      game.currentBet = player.contribution;
+      game.players.forEach((seat) => {
+        if (!seat.folded && !seat.allIn && seat.id !== player.id) seat.hasActed = false;
+      });
+    }
     player.hasActed = true;
-    label = `${player.name} ${verb} ${amount}`;
+    label = player.allIn ? `${player.name} 全下 ${amount}` : `${player.name} ${verb} ${amount}`;
     game.history = [label, ...game.history];
   } else if (action === "all-in") {
     amount = player.stack;
