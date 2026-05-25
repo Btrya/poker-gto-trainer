@@ -414,11 +414,18 @@ function awardShowdownPots(game: PokerGame, livePlayers: PokerPlayer[], fallback
   const pots = buildSidePots(game.players);
   const allWinnerIds = new Set<string>();
   const messages: string[] = [];
+  const refundMessages: string[] = [];
   let displayedWinnerHand = fallbackWinnerHand;
 
   pots.forEach((pot, index) => {
     const eligible = livePlayers.filter((player) => pot.eligibleIds.includes(player.id));
     if (eligible.length === 0 || pot.amount <= 0) return;
+
+    if (eligible.length === 1) {
+      eligible[0].stack += pot.amount;
+      refundMessages.push(`${eligible[0].name} 收回未被跟注筹码 ${pot.amount}`);
+      return;
+    }
 
     const ranked = eligible.map((player) => ({
       player,
@@ -442,7 +449,7 @@ function awardShowdownPots(game: PokerGame, livePlayers: PokerPlayer[], fallback
     messages.push(`${winners.map((winner) => winner.name).join("、")} 以${handName}赢下${potName} ${pot.amount}`);
   });
 
-  const message = messages.length > 0 ? messages.join("；") : `${livePlayers[0].name} 赢下底池 ${game.pot}`;
+  const message = [...messages, ...refundMessages].join("；") || `${livePlayers[0].name} 赢下底池 ${game.pot}`;
   game.lastWinners = [...allWinnerIds];
   game.lastWinnerHand = displayedWinnerHand;
   game.message = message;
