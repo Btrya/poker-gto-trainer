@@ -54,9 +54,9 @@ function App() {
   const [attempts, setAttempts] = useState<Attempt[]>(() => readLocalAttempts());
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
-  const [botCount, setBotCount] = useState(3);
+  const [botCount, setBotCount] = useState(5);
   const [animationEnabled, setAnimationEnabled] = useState(true);
-  const [pokerGame, setPokerGame] = useState<PokerGame>(() => createPokerGame(3));
+  const [pokerGame, setPokerGame] = useState<PokerGame>(() => createPokerGame(5));
   const [actionEvent, setActionEvent] = useState<PokerActionEvent | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState("");
